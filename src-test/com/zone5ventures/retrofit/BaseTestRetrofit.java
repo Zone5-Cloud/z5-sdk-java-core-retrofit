@@ -1,0 +1,40 @@
+package com.zone5ventures.retrofit;
+
+import org.junit.Before;
+
+import com.google.gson.Gson;
+import com.zone5ventures.retrofit.core.OkHttpClientCookieJar;
+import com.zone5ventures.retrofit.core.OkHttpClientInterceptor_Authorization;
+import com.zone5ventures.retrofit.core.OkHttpClientInterceptor_NoDecorate;
+import com.zone5ventures.retrofit.core.activities.ActivitiesAPI;
+import com.zone5ventures.retrofit.core.users.UserAPI;
+import com.zone5ventures.utils.GsonManager;
+
+import okhttp3.OkHttpClient;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+public class BaseTestRetrofit extends BaseTest {
+	
+	protected UserAPI userApi = null;
+	protected ActivitiesAPI activitiesApi = null;
+	
+	@Before
+	public void init() {
+		String authToken = super.token;
+		
+		OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
+		OkHttpClientInterceptor_Authorization auth = new OkHttpClientInterceptor_Authorization(authToken);
+		
+        Gson gson = GsonManager.getInstance();
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(getBaseEndpoint())
+                .client(new OkHttpClient().newBuilder().cookieJar(new OkHttpClientCookieJar()).addInterceptor(nodecorate).addInterceptor(auth).build())
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .build();
+
+        userApi = retrofit.create(UserAPI.class);
+        activitiesApi = retrofit.create(ActivitiesAPI.class);
+    }
+}
