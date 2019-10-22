@@ -14,27 +14,29 @@ In particular, the following elements are provided;
 * GsonManager.java - Can provice you with a Gson instance for serialization/deserialization. If you already have a Gson instance, use the GsonManager.decorate(builder) to decorate your Gson instance with the Z5 type adapters.
 
 ```
-    String server = "https://staging.todaysplan.com.au";
-    String authToken = "my user bearer token"
+String server = "https://staging.todaysplan.com.au";
+String authToken = "my user bearer token"
 		
-		OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
-		OkHttpClientInterceptor_Authorization auth = new OkHttpClientInterceptor_Authorization(authToken);
+OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
+OkHttpClientInterceptor_Authorization auth = new OkHttpClientInterceptor_Authorization(authToken);
 		
-    Gson gson = GsonManager.getInstance();
-    # Alternatively, if you have your own GsonBuilder - use GsonManager.decorate(builder)
+Gson gson = GsonManager.getInstance();
+# Alternatively, if you have your own GsonBuilder - use GsonManager.decorate(builder)
 
-    Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(server)
-                .client(
-                    new OkHttpClient()
-                       .newBuilder().cookieJar(new OkHttpClientCookieJar())
-                       .addInterceptor(nodecorate)
-                       .addInterceptor(auth)
-                       .build()
-                    )
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .build();
+Retrofit retrofit = new Retrofit.Builder()
+  .baseUrl(server)
+  .client(
+     new OkHttpClient()
+	.newBuilder().cookieJar(new OkHttpClientCookieJar())
+	.addInterceptor(nodecorate)
+ 	.addInterceptor(auth)
+	.build()
+     )
+  .addConverterFactory(GsonConverterFactory.create(gson))
+  .build();
 
-    UserAPI userApi = retrofit.create(UserAPI.class);
-    ActivitiesAPI activitiesApi = retrofit.create(ActivitiesAPI.class);
+UserAPI userApi = retrofit.create(UserAPI.class);
+ActivitiesAPI activitiesApi = retrofit.create(ActivitiesAPI.class);
 ```
+
+Example usage of the apis can be found in TestActivitiesAPI.java and TestUsersAPI.java. 
