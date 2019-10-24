@@ -1,17 +1,14 @@
 package com.zone5ventures.retrofit.core.apis;
 
 import java.io.File;
-import java.util.Arrays;
 
 import com.zone5ventures.core.activities.Activities;
 import com.zone5ventures.core.activities.DataFileUploadContext;
 import com.zone5ventures.core.activities.DataFileUploadIndex;
 import com.zone5ventures.core.activities.UserWorkoutFileSearch;
 import com.zone5ventures.core.activities.UserWorkoutResult;
-import com.zone5ventures.core.activities.VActivity;
 import com.zone5ventures.core.enums.ActivityResultType;
 import com.zone5ventures.core.enums.IntensityZoneType;
-import com.zone5ventures.core.enums.RelativePeriod;
 import com.zone5ventures.core.search.MappedResult;
 import com.zone5ventures.core.search.MappedSearchResult;
 import com.zone5ventures.core.search.SearchInput;
