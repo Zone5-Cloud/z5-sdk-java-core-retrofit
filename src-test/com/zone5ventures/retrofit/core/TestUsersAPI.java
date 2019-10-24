@@ -1,9 +1,10 @@
-package com.zone5ventures.retrofit;
+package com.zone5ventures.retrofit.core;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-import com.zone5ventures.common.users.User;
+import com.zone5ventures.core.users.User;
+
+import static org.junit.Assert.*;
 
 import retrofit2.Call;
 import retrofit2.Callback;

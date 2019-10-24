@@ -1,4 +1,4 @@
-package com.zone5ventures.retrofit;
+package com.zone5ventures.retrofit.core;
 
 import java.io.File;
 

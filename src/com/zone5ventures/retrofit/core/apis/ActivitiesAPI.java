@@ -1,22 +1,22 @@
-package com.zone5ventures.retrofit.core.activities;
+package com.zone5ventures.retrofit.core.apis;
 
 import java.io.File;
 import java.util.Arrays;
 
-import com.zone5ventures.common.activities.Activities;
-import com.zone5ventures.common.activities.DataFileUploadContext;
-import com.zone5ventures.common.activities.DataFileUploadIndex;
-import com.zone5ventures.common.activities.UserWorkoutFileSearch;
-import com.zone5ventures.common.activities.UserWorkoutResult;
-import com.zone5ventures.common.activities.VActivity;
-import com.zone5ventures.common.enums.ActivityResultType;
-import com.zone5ventures.common.enums.IntensityZoneType;
-import com.zone5ventures.common.enums.RelativePeriod;
-import com.zone5ventures.common.search.MappedResult;
-import com.zone5ventures.common.search.MappedSearchResult;
-import com.zone5ventures.common.search.SearchInput;
-import com.zone5ventures.common.search.SearchInputReport;
-import com.zone5ventures.utils.GsonManager;
+import com.zone5ventures.core.activities.Activities;
+import com.zone5ventures.core.activities.DataFileUploadContext;
+import com.zone5ventures.core.activities.DataFileUploadIndex;
+import com.zone5ventures.core.activities.UserWorkoutFileSearch;
+import com.zone5ventures.core.activities.UserWorkoutResult;
+import com.zone5ventures.core.activities.VActivity;
+import com.zone5ventures.core.enums.ActivityResultType;
+import com.zone5ventures.core.enums.IntensityZoneType;
+import com.zone5ventures.core.enums.RelativePeriod;
+import com.zone5ventures.core.search.MappedResult;
+import com.zone5ventures.core.search.MappedSearchResult;
+import com.zone5ventures.core.search.SearchInput;
+import com.zone5ventures.core.search.SearchInputReport;
+import com.zone5ventures.core.utils.GsonManager;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -104,26 +104,6 @@ public interface ActivitiesAPI {
     
     @POST(Activities.PEAK_LSSKG)
     Call<MappedResult<UserWorkoutResult>> peakLegSpringStiffnessKgCurve(@Body SearchInputReport criteria);
-    
-    
-    
-    /** Return a SearchInputReport which can be used for reporting endpoints - ie time in zone for a given activity */
-    public static SearchInputReport newInstance(ActivityResultType type, long activityId) {
-    	SearchInputReport s = new SearchInputReport();
-    	s.setOpts(3L);
-    	s.setActivities(Arrays.asList(new VActivity(activityId, type)));
-    	return s;
-    }
-    
-    /** Return a SearchInputReport which can be used for peak curve reporting endpoionts. The reference period defines the comparison period to be included */
-    public static SearchInputReport newInstancePeaksCurve(ActivityResultType type, long activityId, RelativePeriod referencePeriod) {
-    	SearchInputReport s = newInstance(type, activityId);
-    	if (referencePeriod != null) {
-    		s.setReferences(Arrays.asList(referencePeriod));
-    		s.setAlltime(true);
-    	}    
-    	return s;
-    }
     
     public static MultipartBody.Part constructForFileUpload(File fit) {
     	return MultipartBody.Part.createFormData("file", fit.getName(), RequestBody.create(MediaType.parse("application/octet-stream"), fit));

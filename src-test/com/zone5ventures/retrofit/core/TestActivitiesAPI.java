@@ -1,4 +1,4 @@
-package com.zone5ventures.retrofit;
+package com.zone5ventures.retrofit.core;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -17,25 +17,26 @@ import java.util.TimeZone;
 
 import org.junit.Test;
 
-import com.zone5ventures.common.activities.DataFileUploadContext;
-import com.zone5ventures.common.activities.DataFileUploadIndex;
-import com.zone5ventures.common.activities.UserWorkoutFileSearch;
-import com.zone5ventures.common.activities.UserWorkoutResult;
-import com.zone5ventures.common.activities.VActivity;
-import com.zone5ventures.common.enums.ActivityResultType;
-import com.zone5ventures.common.enums.ActivityType;
-import com.zone5ventures.common.enums.Equipment;
-import com.zone5ventures.common.enums.FileUploadState;
-import com.zone5ventures.common.enums.IntensityZoneType;
-import com.zone5ventures.common.enums.RelativePeriod;
-import com.zone5ventures.common.enums.UserWorkoutState;
-import com.zone5ventures.common.enums.WorkoutType;
-import com.zone5ventures.common.search.DateRange;
-import com.zone5ventures.common.search.MappedResult;
-import com.zone5ventures.common.search.MappedSearchResult;
-import com.zone5ventures.common.search.Order;
-import com.zone5ventures.common.search.SearchInput;
-import com.zone5ventures.retrofit.core.activities.ActivitiesAPI;
+import com.zone5ventures.core.activities.Activities;
+import com.zone5ventures.core.activities.DataFileUploadContext;
+import com.zone5ventures.core.activities.DataFileUploadIndex;
+import com.zone5ventures.core.activities.UserWorkoutFileSearch;
+import com.zone5ventures.core.activities.UserWorkoutResult;
+import com.zone5ventures.core.activities.VActivity;
+import com.zone5ventures.core.enums.ActivityResultType;
+import com.zone5ventures.core.enums.ActivityType;
+import com.zone5ventures.core.enums.Equipment;
+import com.zone5ventures.core.enums.FileUploadState;
+import com.zone5ventures.core.enums.IntensityZoneType;
+import com.zone5ventures.core.enums.RelativePeriod;
+import com.zone5ventures.core.enums.UserWorkoutState;
+import com.zone5ventures.core.enums.WorkoutType;
+import com.zone5ventures.core.search.DateRange;
+import com.zone5ventures.core.search.MappedResult;
+import com.zone5ventures.core.search.MappedSearchResult;
+import com.zone5ventures.core.search.Order;
+import com.zone5ventures.core.search.SearchInput;
+import com.zone5ventures.retrofit.core.apis.ActivitiesAPI;
 
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -104,13 +105,13 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		assertEquals(index.getResultId(), results.getResult().getResults().get(0).getFileId());
 		
 		// Get the power time in zones breakdown
-		MappedResult<UserWorkoutResult> zones = activitiesApi.timeInZones(IntensityZoneType.pwr, ActivitiesAPI.newInstance(ActivityResultType.files, results.getResult().getResults().get(0).getFileId())).execute().body();
+		MappedResult<UserWorkoutResult> zones = activitiesApi.timeInZones(IntensityZoneType.pwr, Activities.newInstance(ActivityResultType.files, results.getResult().getResults().get(0).getFileId())).execute().body();
 		assertEquals(1, zones.getResults().size());
 		assertTrue(zones.getResults().get(0).getPwrZones().size() > 0);
 		assertNotNull(zones.getResults().get(0).getThresholdWatts());
 		
 		// Get the power curve for this activity - with the best ever relative curve
-		MappedResult<UserWorkoutResult> powercurve = activitiesApi.peakPowerCurve(ActivitiesAPI.newInstancePeaksCurve(ActivityResultType.files, results.getResult().getResults().get(0).getFileId(), RelativePeriod.alltime)).execute().body();
+		MappedResult<UserWorkoutResult> powercurve = activitiesApi.peakPowerCurve(Activities.newInstancePeaksCurve(ActivityResultType.files, results.getResult().getResults().get(0).getFileId(), RelativePeriod.alltime)).execute().body();
 		assertNotNull(powercurve.getResults().get(0).getPeak3secWatts());
 		
 		// Delete it
@@ -172,7 +173,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		search.getCriteria().setIsNotNull(Arrays.asList("fileId"));
 		
 		// Order by ride start time desc
-		search.getCriteria().setOrder(Arrays.asList(new Order("startTs", com.zone5ventures.common.enums.Order.desc)));
+		search.getCriteria().setOrder(Arrays.asList(new Order("startTs", com.zone5ventures.core.enums.Order.desc)));
 		
 		// Limit to rides with a startTs <= now - ie avoid dodgy files which might have a timestamp in the future!
 		search.getCriteria().setToTs(System.currentTimeMillis());
@@ -207,7 +208,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		search.getCriteria().setSports(Arrays.asList(ActivityType.ride));
 		
 		// Order by ride start time desc
-		search.getCriteria().setOrder(Arrays.asList(new Order("startTs", com.zone5ventures.common.enums.Order.desc)));
+		search.getCriteria().setOrder(Arrays.asList(new Order("startTs", com.zone5ventures.core.enums.Order.desc)));
 		
 		// Limit to rides which were done in the last 12 months
 		search.getCriteria().setFromTs(System.currentTimeMillis() - (1000L*60*60*24*365));
@@ -271,7 +272,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		search.getCriteria().setState(UserWorkoutState.pending);
 		search.getCriteria().setExcludeWorkouts(Arrays.asList(WorkoutType.rest));
 		
-		search.getCriteria().setOrder(Arrays.asList(new Order("scheduled.day", com.zone5ventures.common.enums.Order.desc)));
+		search.getCriteria().setOrder(Arrays.asList(new Order("scheduled.day", com.zone5ventures.core.enums.Order.desc)));
 		
 		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).execute().body();
 		assertNotNull(results);
@@ -282,7 +283,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		SearchInput<UserWorkoutFileSearch> search = new SearchInput<>(new UserWorkoutFileSearch());
 		
 		search.setFields(Arrays.asList("scheduled.day", "scheduled.tz", "scheduled.name", "scheduled.tscorepwr", "scheduled.durationSecs", "scheduled.distance", "scheduled.workout", "scheduled.preDescr"));
-		search.getCriteria().setOrder(Arrays.asList(new Order("scheduled.day", com.zone5ventures.common.enums.Order.asc)));
+		search.getCriteria().setOrder(Arrays.asList(new Order("scheduled.day", com.zone5ventures.core.enums.Order.asc)));
 		search.getCriteria().setFromTs(System.currentTimeMillis());
 		
 		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).execute().body();

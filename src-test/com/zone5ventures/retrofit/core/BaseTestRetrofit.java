@@ -1,14 +1,14 @@
-package com.zone5ventures.retrofit;
+package com.zone5ventures.retrofit.core;
 
 import org.junit.Before;
 
 import com.google.gson.Gson;
+import com.zone5ventures.core.utils.GsonManager;
 import com.zone5ventures.retrofit.core.OkHttpClientCookieJar;
 import com.zone5ventures.retrofit.core.OkHttpClientInterceptor_Authorization;
 import com.zone5ventures.retrofit.core.OkHttpClientInterceptor_NoDecorate;
-import com.zone5ventures.retrofit.core.activities.ActivitiesAPI;
-import com.zone5ventures.retrofit.core.users.UserAPI;
-import com.zone5ventures.utils.GsonManager;
+import com.zone5ventures.retrofit.core.apis.ActivitiesAPI;
+import com.zone5ventures.retrofit.core.apis.UserAPI;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
