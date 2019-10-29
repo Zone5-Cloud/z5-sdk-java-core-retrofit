@@ -8,7 +8,7 @@ import com.zone5ventures.core.search.SearchInputReport;
 
 import retrofit2.http.Body;
 import retrofit2.http.POST;
-import rx.Observable;
+import io.reactivex.Observable;
 
 public interface MetricsAPI {
 	

@@ -10,7 +10,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 
 	@Test
 	public void testMe() {
-		User user = userApi.me().toBlocking().first();
+		User user = userApi.me().blockingFirst();
 		assertNotNull(user.getId());
 		assertNotNull(user.getFirstname());
 		assertNotNull(user.getLastname());

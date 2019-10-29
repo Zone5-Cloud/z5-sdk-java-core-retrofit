@@ -12,7 +12,7 @@ import com.zone5ventures.retrofit.core.apis.UserAPI;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class BaseTestRetrofit extends BaseTest {
@@ -33,7 +33,7 @@ public class BaseTestRetrofit extends BaseTest {
                 .baseUrl(getBaseEndpoint())
                 .client(new OkHttpClient().newBuilder().cookieJar(new OkHttpClientCookieJar()).addInterceptor(nodecorate).addInterceptor(auth).build())
                 .addConverterFactory(GsonConverterFactory.create(gson))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();
 
         userApi = retrofit.create(UserAPI.class);
