@@ -54,11 +54,11 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		RequestBody filenamePart    = ActivitiesAPI.constructForFileUploadFileFilename(fit);
 		RequestBody metaPart        = null;
 		
-		DataFileUploadIndex index = activitiesApi.upload(filePart, filenamePart, metaPart).blockingFirst();
+		DataFileUploadIndex index = activitiesApi.upload(filePart, filenamePart, metaPart).blockingFirst().body();
 		
 		assertNotNull(index.getId()); // file processing index id
 		if (index.getState() == FileUploadState.finished) {
-			assertTrue(activitiesApi.delete(ActivityResultType.files, index.getResultId()).blockingFirst());
+			assertTrue(activitiesApi.delete(ActivityResultType.files, index.getResultId()).blockingFirst().body());
 			return;
 		}
 		
@@ -67,7 +67,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		// Wait for it to process
 		while(index.getState() != FileUploadState.finished) {
 			Thread.sleep(1000L);
-			index = activitiesApi.uploadStatus(index.getId()).blockingFirst();
+			index = activitiesApi.uploadStatus(index.getId()).blockingFirst().body();
 		}
 		
 		assertNotNull(index.getResultId());
@@ -76,7 +76,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		SearchInput<UserWorkoutFileSearch> search = new SearchInput<>(new UserWorkoutFileSearch());
 		search.getCriteria().setActivities(Arrays.asList(new VActivity(index.getResultId(), ActivityResultType.files)));
 		search.setFields(Arrays.asList("name", "distance", "ascent", "peak3minWatts", "peak20minWatts", "channels"));
-		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 1, search).blockingFirst();
+		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 1, search).blockingFirst().body();
 		assertEquals(1, results.getResult().getResults().size());
 		
 		// DataFileUploadIndex.resultId === fileId
@@ -84,38 +84,38 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		assertEquals(index.getResultId(), results.getResult().getResults().get(0).getActivityId());
 		assertEquals(ActivityResultType.files, results.getResult().getResults().get(0).getActivity());
 		
-		File f = toFile(activitiesApi.downloadFit(results.getResult().getResults().get(0).getFileId()).blockingFirst());
+		File f = toFile(activitiesApi.downloadFit(results.getResult().getResults().get(0).getFileId()).blockingFirst().body());
 		assertTrue(f.exists() && f.length() == fit.length());
 		
-		f = toFile(activitiesApi.downloadMap(results.getResult().getResults().get(0).getFileId()).blockingFirst());
+		f = toFile(activitiesApi.downloadMap(results.getResult().getResults().get(0).getFileId()).blockingFirst().body());
 		assertTrue(f.exists() && f.length() > 0);	
 		
-		f = toFile(activitiesApi.downloadRaw(results.getResult().getResults().get(0).getFileId()).blockingFirst());
+		f = toFile(activitiesApi.downloadRaw(results.getResult().getResults().get(0).getFileId()).blockingFirst().body());
 		assertTrue(f.exists() && f.length() > 0);
 		
-		f = toFile(activitiesApi.downloadCsv(results.getResult().getResults().get(0).getFileId()).blockingFirst());
+		f = toFile(activitiesApi.downloadCsv(results.getResult().getResults().get(0).getFileId()).blockingFirst().body());
 		assertTrue(f.exists() && f.length() > 0);
 		
 		// Search by filename
 		search = new SearchInput<>(new UserWorkoutFileSearch());
 		search.getCriteria().setName(fit.getName());
 		search.setFields(Arrays.asList("name", "distance", "ascent", "peak3minWatts", "peak20minWatts", "channels"));
-		results = activitiesApi.search(0, 1, search).blockingFirst();
+		results = activitiesApi.search(0, 1, search).blockingFirst().body();
 		assertEquals(1, results.getResult().getResults().size());
 		assertEquals(index.getResultId(), results.getResult().getResults().get(0).getFileId());
 		
 		// Get the power time in zones breakdown
-		MappedResult<UserWorkoutResult> zones = activitiesApi.timeInZones(IntensityZoneType.pwr, Activities.newInstance(ActivityResultType.files, results.getResult().getResults().get(0).getFileId())).blockingFirst();
+		MappedResult<UserWorkoutResult> zones = activitiesApi.timeInZones(IntensityZoneType.pwr, Activities.newInstance(ActivityResultType.files, results.getResult().getResults().get(0).getFileId())).blockingFirst().body();
 		assertEquals(1, zones.getResults().size());
 		assertTrue(zones.getResults().get(0).getPwrZones().size() > 0);
 		assertNotNull(zones.getResults().get(0).getThresholdWatts());
 		
 		// Get the power curve for this activity - with the best ever relative curve
-		MappedResult<UserWorkoutResult> powercurve = activitiesApi.peakPowerCurve(Activities.newInstancePeaksCurve(ActivityResultType.files, results.getResult().getResults().get(0).getFileId(), RelativePeriod.alltime)).blockingFirst();
+		MappedResult<UserWorkoutResult> powercurve = activitiesApi.peakPowerCurve(Activities.newInstancePeaksCurve(ActivityResultType.files, results.getResult().getResults().get(0).getFileId(), RelativePeriod.alltime)).blockingFirst().body();
 		assertNotNull(powercurve.getResults().get(0).getPeak3secWatts());
 		
 		// Delete it
-		assertTrue(activitiesApi.delete(ActivityResultType.files, index.getResultId()).blockingFirst());
+		assertTrue(activitiesApi.delete(ActivityResultType.files, index.getResultId()).blockingFirst().body());
 	}
 	
 	@Test
@@ -133,11 +133,11 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		RequestBody filenamePart    = ActivitiesAPI.constructForFileUploadFileFilename(fit);
 		RequestBody metaPart        = ActivitiesAPI.constructForFileUpload(c);
 		
-		DataFileUploadIndex index = activitiesApi.upload(filePart, filenamePart, metaPart).blockingFirst();
+		DataFileUploadIndex index = activitiesApi.upload(filePart, filenamePart, metaPart).blockingFirst().body();
 		
 		assertNotNull(index.getId()); // file processing index id
 		if (index.getState() == FileUploadState.finished) {
-			assertTrue(activitiesApi.delete(ActivityResultType.files, index.getResultId()).blockingFirst());
+			assertTrue(activitiesApi.delete(ActivityResultType.files, index.getResultId()).blockingFirst().body());
 			return;
 		}
 		
@@ -146,20 +146,20 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		// Wait for it to process
 		while(index.getState() != FileUploadState.finished) {
 			Thread.sleep(1000L);
-			index = activitiesApi.uploadStatus(index.getId()).blockingFirst();
+			index = activitiesApi.uploadStatus(index.getId()).blockingFirst().body();
 		}
 		
 		// Search specifically for this file by it's resultId - and make sure our custom name and equipment type stuck
 		SearchInput<UserWorkoutFileSearch> search = new SearchInput<>(new UserWorkoutFileSearch());
 		search.getCriteria().setActivities(Arrays.asList(new VActivity(index.getResultId(), ActivityResultType.files)));
 		search.setFields(Arrays.asList("name", "equipment"));
-		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 1, search).blockingFirst();
+		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 1, search).blockingFirst().body();
 		assertEquals(1, results.getResult().getResults().size());
 		assertEquals("Epic ride", results.getResult().getResults().get(0).getName());
 		assertEquals(Equipment.gravel, results.getResult().getResults().get(0).getEquipment());
 
 		// Delete it
-		assertTrue(activitiesApi.delete(ActivityResultType.files, index.getResultId()).blockingFirst());
+		assertTrue(activitiesApi.delete(ActivityResultType.files, index.getResultId()).blockingFirst().body());
 	}
 
 	@Test
@@ -178,7 +178,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		// Limit to rides with a startTs <= now - ie avoid dodgy files which might have a timestamp in the future!
 		search.getCriteria().setToTs(System.currentTimeMillis());
 			
-		MappedSearchResult<UserWorkoutResult> result = activitiesApi.search(0, 10, search).blockingFirst();
+		MappedSearchResult<UserWorkoutResult> result = activitiesApi.search(0, 10, search).blockingFirst().body();
 		
 		// The total number of results which are available (assumes you have uploaded at least 1 ride! 
         assertTrue(result.getCnt() > 0);
@@ -213,7 +213,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		// Limit to rides which were done in the last 12 months
 		search.getCriteria().setFromTs(System.currentTimeMillis() - (1000L*60*60*24*365));
 		
-		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst();
+		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst().body();
 		
 		assertTrue(results.getResult().getResults().size() <= 10);
 		for(UserWorkoutResult r : results.getResult().getResults())
@@ -221,7 +221,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		
 		if (results.getCnt() > 10) {
 			// Get the next batch of 10
-			results = activitiesApi.next(10, 10).blockingFirst();
+			results = activitiesApi.next(10, 10).blockingFirst().body();
 			assertTrue(results.getResult().getResults().size() <= 10);
 			for(UserWorkoutResult r : results.getResult().getResults())
 				assertTrue(r.getDistance() >= 20000 && r.getDistance() <= 30000);
@@ -255,7 +255,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		// First 30 days of 2019
 		search.getCriteria().getRangesTs().add(new DateRange(c.getTimeInMillis(), c.getTimeInMillis()+(1000L*60*60*24*30), "Australia/Sydney"));
 		
-		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst();
+		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst().body();
 		assertNotNull(results);
 	}
 	
@@ -274,7 +274,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		
 		search.getCriteria().setOrder(Arrays.asList(new Order("scheduled.day", com.zone5ventures.core.enums.Order.desc)));
 		
-		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst();
+		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst().body();
 		assertNotNull(results);
 	}
 	
@@ -286,7 +286,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		search.getCriteria().setOrder(Arrays.asList(new Order("scheduled.day", com.zone5ventures.core.enums.Order.asc)));
 		search.getCriteria().setFromTs(System.currentTimeMillis());
 		
-		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst();
+		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst().body();
 		assertNotNull(results);
 	}
 	
@@ -320,7 +320,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		search.getCriteria().setName("Foo");
 		
 		
-		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst();
+		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst().body();
 		assertNotNull(results);
 	}
 	

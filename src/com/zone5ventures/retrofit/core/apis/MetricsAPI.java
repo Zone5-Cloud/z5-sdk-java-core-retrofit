@@ -9,6 +9,7 @@ import com.zone5ventures.core.search.SearchInputReport;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
 import io.reactivex.Observable;
+import retrofit2.Response;
 
 public interface MetricsAPI {
 	
@@ -33,5 +34,5 @@ public interface MetricsAPI {
 	 * 
 	 */
     @POST(Activities.METRICS)
-    Observable<MappedResult<UserWorkoutResultAggregates>> metrics(@Body SearchInput<SearchInputReport> input);
+    Observable<Response<MappedResult<UserWorkoutResultAggregates>>> metrics(@Body SearchInput<SearchInputReport> input);
 }

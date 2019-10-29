@@ -5,9 +5,11 @@ import com.zone5ventures.core.users.Users;
 
 import retrofit2.http.GET;
 import io.reactivex.Observable;
+import retrofit2.Response;
+
 
 public interface UserAPI {
 	
     @GET(Users.ME)
-    Observable<User> me();
+    Observable<Response<User>> me();
 }

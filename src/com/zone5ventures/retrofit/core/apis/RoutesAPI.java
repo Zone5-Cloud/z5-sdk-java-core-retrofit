@@ -21,82 +21,84 @@ import retrofit2.http.POST;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
 import io.reactivex.Observable;
+import retrofit2.Response;
+
 
 public interface RoutesAPI {
 	
 	/** Search for routes */
 	@POST(Routes.SEARCH)
-    Observable<SearchResult<UserRoute>> search(@Path("offset") int offset, @Path("count") int count, @Body UserRouteSearch criteria);	
+    Observable<Response<SearchResult<UserRoute>>> search(@Path("offset") int offset, @Path("count") int count, @Body UserRouteSearch criteria);	
 	
     /** Get the next paginated batch - relative to the previous search query */
     @GET(Routes.NEXT)
-    Observable<SearchResult<UserRoute>> next(@Path("offset") int offset, @Path("count") int count);
+    Observable<Response<SearchResult<UserRoute>>> next(@Path("offset") int offset, @Path("count") int count);
     
     /** Get summary information about the route */
     @GET(Routes.SUMMARY)
-    Observable<UserRoute> summary(@Path("routeId") long routeId);
+    Observable<Response<UserRoute>> summary(@Path("routeId") long routeId);
     
     /** Get summary information about the route */
     @GET(Routes.SUMMARY)
-    Observable<UserRoute> summary(@Path("routeId") String uuid);
+    Observable<Response<UserRoute>> summary(@Path("routeId") String uuid);
     
     /** Get detailed information about the route */
     @GET(Routes.DETAILED)
-    Observable<UserRoute> detailed(@Path("routeId") long routeId);
+    Observable<Response<UserRoute>> detailed(@Path("routeId") long routeId);
     
     /** Get detailed information about the route */
     @GET(Routes.DETAILED)
-    Observable<UserRoute> detailed(@Path("routeId") String uuid);
+    Observable<Response<UserRoute>> detailed(@Path("routeId") String uuid);
     
     /** Delete a route */
     @GET(Routes.DELETE)
-    Observable<Boolean> delete(@Path("routeId") long routeId);
+    Observable<Response<Boolean>> delete(@Path("routeId") long routeId);
     
     /** Download a png map of the route */
     @GET(Routes.DOWNLOAD_PNG)
-    Observable<ResponseBody> downloadPng(@Path("routeId") long routeId);
+    Observable<Response<ResponseBody>> downloadPng(@Path("routeId") long routeId);
     
     /** Download a png map of the route */
     @GET(Routes.DOWNLOAD_PNG)
-    Observable<ResponseBody> downloadPng(@Path("routeId") String uuid);
+    Observable<Response<ResponseBody>> downloadPng(@Path("routeId") String uuid);
     
     /** Download a fit version of the route */
     @GET(Routes.DOWNLOAD_FIT)
-    Observable<ResponseBody> downloadFit(@Path("routeId") long routeId);
+    Observable<Response<ResponseBody>> downloadFit(@Path("routeId") long routeId);
     
     /** Download a fit version of the route */
     @GET(Routes.DOWNLOAD_FIT)
-    Observable<ResponseBody> downloadFit(@Path("routeId") String uuid);
+    Observable<Response<ResponseBody>> downloadFit(@Path("routeId") String uuid);
     
     /** Download a gpx version of the route */
     @GET(Routes.DOWNLOAD_GPX)
-    Observable<ResponseBody> downloadGpx(@Path("routeId") long routeId);
+    Observable<Response<ResponseBody>> downloadGpx(@Path("routeId") long routeId);
     
     /** Download a gpx version of the route */
     @GET(Routes.DOWNLOAD_GPX)
-    Observable<ResponseBody> downloadGpx(@Path("routeId") String uuid);
+    Observable<Response<ResponseBody>> downloadGpx(@Path("routeId") String uuid);
     
     /** Update metadata about the route */
     @POST(Routes.UPDATE)
-    Observable<Boolean> gpx(@Path("routeId") long routeId, @Body UserRoute route);
+    Observable<Response<Boolean>> gpx(@Path("routeId") long routeId, @Body UserRoute route);
     
     /** Create a new route a json or fit file - the json element should be a serialized UserRoute - see utility methods below for assistance in constructing these parts */
     @Multipart
     @POST(Routes.UPLOAD)
-    Observable<DataFileUploadIndex> createFromFile(@Path("format") UserRouteOutputType format, @Part MultipartBody.Part file, @Part("filename") RequestBody filename, @Part("json") RequestBody route);
+    Observable<Response<DataFileUploadIndex>> createFromFile(@Path("format") UserRouteOutputType format, @Part MultipartBody.Part file, @Part("filename") RequestBody filename, @Part("json") RequestBody route);
     
     /** Update a route from a json or fit file - the json element should be a serialized UserRoute - see utility methods below for assistance in constructing these parts */
     @Multipart
     @POST(Routes.UPLOAD_UPDATE)
-    Observable<DataFileUploadIndex> createFromFile(@Path("format") UserRouteOutputType format, @Path("routeId") long routeId, @Part MultipartBody.Part file, @Part("filename") RequestBody filename, @Part("json") RequestBody route);
+    Observable<Response<DataFileUploadIndex>> createFromFile(@Path("format") UserRouteOutputType format, @Path("routeId") long routeId, @Part MultipartBody.Part file, @Part("filename") RequestBody filename, @Part("json") RequestBody route);
     
     /** Create a new route from an existing fileId / completed activity - note that actual conversation occurs asynchronously. The route will be available once it has been processed. */
 	@GET(Routes.CLONE_ACTIVITY)
-    Observable<ResponseBody> createFromActivity(@Path("fileId") long fileId);
+    Observable<Response<ResponseBody>> createFromActivity(@Path("fileId") long fileId);
 	
 	/** Create a new route from an existing route - note that actual conversation occurs asynchronously. The route will be available once it has been processed. */
 	@GET(Routes.CLONE_ROUTE)
-    Observable<ResponseBody> createFromRoute(@Path("routeId") long routeId);
+    Observable<Response<ResponseBody>> createFromRoute(@Path("routeId") long routeId);
     
     public static MultipartBody.Part constructForUpload(File fit) {
     	return MultipartBody.Part.createFormData("file", fit.getName(), RequestBody.create(MediaType.parse("application/octet-stream"), fit));

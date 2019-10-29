@@ -20,6 +20,7 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import retrofit2.Response;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.Multipart;
@@ -37,11 +38,11 @@ public interface ActivitiesAPI {
 	 * Remember, if you have scope to multiple users to include the userIds in the criteria to restrict to specific users records.
 	 */
     @POST(Activities.SEARCH)
-    Observable<MappedSearchResult<UserWorkoutResult>> search(@Path("offset") int offset, @Path("count") int count, @Body SearchInput<UserWorkoutFileSearch> criteria);
+    Observable<Response<MappedSearchResult<UserWorkoutResult>>> search(@Path("offset") int offset, @Path("count") int count, @Body SearchInput<UserWorkoutFileSearch> criteria);
 
     /** Get the next paginated batch - relative to the previous search query */
     @GET(Activities.NEXT)
-    Observable<MappedSearchResult<UserWorkoutResult>> next(@Path("offset") int offset, @Path("count") int count);
+    Observable<Response<MappedSearchResult<UserWorkoutResult>>> next(@Path("offset") int offset, @Path("count") int count);
     
     /**
      * file = MultipartBody.Part.createFormData("file", fit.getName(), RequestBody.create(MediaType.parse("application/octet-stream"), fit));<br>
@@ -54,53 +55,53 @@ public interface ActivitiesAPI {
      */
     @Multipart
     @POST(Activities.UPLOAD)
-    Observable<DataFileUploadIndex> upload(@Part MultipartBody.Part file, @Part("filename") RequestBody filename, @Part("json") RequestBody meta);
+    Observable<Response<DataFileUploadIndex>> upload(@Part MultipartBody.Part file, @Part("filename") RequestBody filename, @Part("json") RequestBody meta);
     
     /** Use the DataFileUploadIndex.id from the upload call to request the file processing status */
     @GET(Activities.FILE_INDEX_STATUS)
-    Observable<DataFileUploadIndex> uploadStatus(@Path("indexId") long indexId);
+    Observable<Response<DataFileUploadIndex>> uploadStatus(@Path("indexId") long indexId);
     
     /** Delete a file, workout or event */
     @GET(Activities.DELETE)
-    Observable<Boolean> delete(@Path("activityType") ActivityResultType activityType, @Path("activityId") long activityId);
+    Observable<Response<Boolean>> delete(@Path("activityType") ActivityResultType activityType, @Path("activityId") long activityId);
     
     /** Download a fit file - the fileId is the same as the activityId, when the activityType=files. It's also provided in any activities search result */
     @GET(Activities.DOWNLOAD_FIT)
-    Observable<ResponseBody> downloadFit(@Path("fileId") long fileId);
+    Observable<Response<ResponseBody>> downloadFit(@Path("fileId") long fileId);
     
     /** Download a fit file which has normalized channel data - useful for timeseries graphs */
     @GET(Activities.DOWNLOAD_RAW3)
-    Observable<ResponseBody> downloadRaw(@Path("fileId") long fileId);
+    Observable<Response<ResponseBody>> downloadRaw(@Path("fileId") long fileId);
     
     /** Download a csv file which has normalized channel data */
     @GET(Activities.DOWNLOAD_CSV)
-    Observable<ResponseBody> downloadCsv(@Path("fileId") long fileId);
+    Observable<Response<ResponseBody>> downloadCsv(@Path("fileId") long fileId);
     
     /** Download a png file which is a static map of the completed route */
     @GET(Activities.DOWNLOAD_MAP)
-    Observable<ResponseBody> downloadMap(@Path("fileId") long fileId);
+    Observable<Response<ResponseBody>> downloadMap(@Path("fileId") long fileId);
     
     /** Download a png file which is a static map of the completed route */
     @POST(Activities.TIME_IN_ZONE)
-    Observable<MappedResult<UserWorkoutResult>> timeInZones(@Path("zoneType") IntensityZoneType zoneType, @Body SearchInputReport criteria);
+    Observable<Response<MappedResult<UserWorkoutResult>>> timeInZones(@Path("zoneType") IntensityZoneType zoneType, @Body SearchInputReport criteria);
     
     @POST(Activities.PEAK_POWER)
-    Observable<MappedResult<UserWorkoutResult>> peakPowerCurve(@Body SearchInputReport criteria);
+    Observable<Response<MappedResult<UserWorkoutResult>>> peakPowerCurve(@Body SearchInputReport criteria);
    
     @POST(Activities.PEAK_HEARTRATE)
-    Observable<MappedResult<UserWorkoutResult>> peakHeartRateCurve(@Body SearchInputReport criteria);
+    Observable<Response<MappedResult<UserWorkoutResult>>> peakHeartRateCurve(@Body SearchInputReport criteria);
     
     @POST(Activities.PEAK_WKG)
-    Observable<MappedResult<UserWorkoutResult>> peakWattsKgCurve(@Body SearchInputReport criteria);
+    Observable<Response<MappedResult<UserWorkoutResult>>> peakWattsKgCurve(@Body SearchInputReport criteria);
     
     @POST(Activities.PEAK_PACE)
-    Observable<MappedResult<UserWorkoutResult>> peakPaceCurve(@Body SearchInputReport criteria);
+    Observable<Response<MappedResult<UserWorkoutResult>>> peakPaceCurve(@Body SearchInputReport criteria);
     
     @POST(Activities.PEAK_LSS)
-    Observable<MappedResult<UserWorkoutResult>> peakLegSpringStiffnessCurve(@Body SearchInputReport criteria);
+    Observable<Response<MappedResult<UserWorkoutResult>>> peakLegSpringStiffnessCurve(@Body SearchInputReport criteria);
     
     @POST(Activities.PEAK_LSSKG)
-    Observable<MappedResult<UserWorkoutResult>> peakLegSpringStiffnessKgCurve(@Body SearchInputReport criteria);
+    Observable<Response<MappedResult<UserWorkoutResult>>> peakLegSpringStiffnessKgCurve(@Body SearchInputReport criteria);
     
     public static MultipartBody.Part constructForFileUpload(File fit) {
     	return MultipartBody.Part.createFormData("file", fit.getName(), RequestBody.create(MediaType.parse("application/octet-stream"), fit));
