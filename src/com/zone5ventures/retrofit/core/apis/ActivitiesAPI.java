@@ -103,6 +103,27 @@ public interface ActivitiesAPI {
     @POST(Activities.PEAK_LSSKG)
     Observable<Response<MappedResult<UserWorkoutResult>>> peakLegSpringStiffnessKgCurve(@Body SearchInputReport criteria);
     
+    
+    /** 
+     * Associate a bikeId (Specialized bikeId) with a completed activity - note that this call may be processed asynchronously.
+     * 
+     * If the given bikeId has not been previously associated with a ride of this user, then the S-Digital query to lookup the bikeId will be performed in the future, and on that external lookup the association in the TP/Z5 system will be made.
+     *  
+     * This method will return true if the bikeId was accepted for being changed. 
+     */
+    @GET(Activities.SET_BIKE)
+    Observable<Response<Boolean>> setBikeId(
+    		@Path("activityType") ActivityResultType activityType, 
+    		@Path("activityId") long activityId,
+    		@Path("bikeId") String bikeId);
+    
+    /** Remove any bikeId which is associated with a completed activity - returns true on success */
+    @GET(Activities.REM_BIKE)
+    Observable<Response<Boolean>> removeBikeId(
+    		@Path("activityType") ActivityResultType activityType, 
+    		@Path("activityId") long activityId);
+    
+    
     public static MultipartBody.Part constructForFileUpload(File fit) {
     	return MultipartBody.Part.createFormData("file", fit.getName(), RequestBody.create(MediaType.parse("application/octet-stream"), fit));
     }
