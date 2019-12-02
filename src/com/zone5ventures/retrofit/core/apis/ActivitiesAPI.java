@@ -5,6 +5,7 @@ import java.io.File;
 import com.zone5ventures.core.activities.Activities;
 import com.zone5ventures.core.activities.DataFileUploadContext;
 import com.zone5ventures.core.activities.DataFileUploadIndex;
+import com.zone5ventures.core.activities.DataFileUploadRecent;
 import com.zone5ventures.core.activities.UserWorkoutFileSearch;
 import com.zone5ventures.core.activities.UserWorkoutResult;
 import com.zone5ventures.core.enums.ActivityResultType;
@@ -60,6 +61,22 @@ public interface ActivitiesAPI {
     /** Use the DataFileUploadIndex.id from the upload call to request the file processing status */
     @GET(Activities.FILE_INDEX_STATUS)
     Observable<Response<DataFileUploadIndex>> uploadStatus(@Path("indexId") long indexId);
+    
+    /** Use the DataFileUploadIndex.id to cancel a file upload / delete file which has failed to process */
+    @GET(Activities.FILE_INDEX_CANCEL)
+    Observable<Response<Boolean>> cancelUpload(@Path("indexId") long indexId);
+    
+    /** Use the DataFileUploadIndex.id to request that a failed file be re-processed / re-attempted. If the file has been successfully processed before, this endpoint will re-queue the file for re-processing. */
+    @GET(Activities.FILE_INDEX_RETRY)
+    Observable<Response<DataFileUploadIndex>> retryUpload(@Path("indexId") long indexId);
+    
+    /** Use the DataFileUploadIndex.id to download the original uploaded file - this can be used even if the file could not be processed */
+    @GET(Activities.FILE_INDEX_DOWNLOAD)
+    Observable<Response<ResponseBody>> downloadUpload(@Path("indexId") long indexId);
+ 
+    /** Query for currently processing files, and files which have been uploaded or reprocessed within the last X seconds */
+    @GET(Activities.FILE_INDEX_STATUS_RECENT)
+    Observable<Response<DataFileUploadRecent>> uploadStatus(@Path("userId") long userId, @Path("secs") int secs);
     
     /** Delete a file, workout or event */
     @GET(Activities.DELETE)
