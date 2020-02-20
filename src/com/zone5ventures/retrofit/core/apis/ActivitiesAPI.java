@@ -8,6 +8,7 @@ import com.zone5ventures.core.activities.DataFileUploadIndex;
 import com.zone5ventures.core.activities.DataFileUploadRecent;
 import com.zone5ventures.core.activities.UserWorkoutFileSearch;
 import com.zone5ventures.core.activities.UserWorkoutResult;
+import com.zone5ventures.core.activities.VActivity;
 import com.zone5ventures.core.enums.ActivityResultType;
 import com.zone5ventures.core.enums.IntensityZoneType;
 import com.zone5ventures.core.search.MappedResult;
@@ -81,6 +82,10 @@ public interface ActivitiesAPI {
     /** Delete a file, workout or event */
     @GET(Activities.DELETE)
     Observable<Response<Boolean>> delete(@Path("activityType") ActivityResultType activityType, @Path("activityId") long activityId);
+    
+    /** Modify an activity - ie change it's name, change date/time, override completed activity metrics. Ensure you set the activityType (activity) and activityId in the input object */
+    @POST(Activities.UPDATE)
+    Observable<Response<VActivity>> update(@Body UserWorkoutResult input);
     
     /** Download a fit file - the fileId is the same as the activityId, when the activityType=files. It's also provided in any activities search result */
     @GET(Activities.DOWNLOAD_FIT)
