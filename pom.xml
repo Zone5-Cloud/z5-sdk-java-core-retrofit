@@ -1,8 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>z5-sdk-java-retrofit</groupId>
-  <artifactId>z5-sdk-java-retrofit</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <groupId>com.zone5cloud</groupId>
+  <artifactId>z5-sdk-java-core-retrofit</artifactId>
+  <version>0.0.2</version>
+  <distributionManagement>
+  	<repository>
+  		<id>github</id>
+  		<name>GitHub Zone5Cloud Apache Maven Packages</name>
+  		<url>https://maven.pkg.github.com/Zone5-Cloud/z5-sdk-java-core-retrofit</url>
+  	</repository>
+  </distributionManagement>
+  
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
@@ -45,9 +53,9 @@
 		
 		
 		<dependency>
-			<groupId>z5-sdk-java-common</groupId>
-  			<artifactId>z5-sdk-java-common</artifactId>
-  			<version>0.0.1</version>
+			<groupId>com.zone5cloud</groupId>
+  			<artifactId>z5-sdk-java-core</artifactId>
+  			<version>0.0.2</version>
 		</dependency>
 		
 		<dependency>
