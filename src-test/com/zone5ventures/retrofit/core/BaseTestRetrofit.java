@@ -39,4 +39,13 @@ public class BaseTestRetrofit extends BaseTest {
         userApi = retrofit.create(UserAPI.class);
         activitiesApi = retrofit.create(ActivitiesAPI.class);
     }
+	
+	public boolean isSpecialized() {
+		return getBaseEndpoint() != null && (getBaseEndpoint().equals("https://api-sp.todaysplan.com.au") || getBaseEndpoint().equals("https://api-sp-staging.todaysplan.com.au"));
+	}
+	
+	protected void setToken(String token) {
+		super.token = token;
+		init();
+	}
 }

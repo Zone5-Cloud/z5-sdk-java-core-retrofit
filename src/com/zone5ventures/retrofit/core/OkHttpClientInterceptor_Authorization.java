@@ -17,7 +17,9 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	@Override
 	public Response intercept(Chain chain) throws IOException {
 		Request originalRequest = chain.request();
-        Request.Builder builder = originalRequest.newBuilder().header("Authorization", bearer);
+		Request.Builder builder = originalRequest.newBuilder();
+		if (bearer != null)
+			builder = builder.header("Authorization", bearer);
         Request newRequest = builder.build();
         return chain.proceed(newRequest);
 	}
