@@ -1,21 +1,21 @@
-package com.zone5ventures.retrofit.core.apis;
+package com.zone5cloud.retrofit.core.apis;
 
 import java.io.File;
 
-import com.zone5ventures.core.activities.Activities;
-import com.zone5ventures.core.activities.DataFileUploadContext;
-import com.zone5ventures.core.activities.DataFileUploadIndex;
-import com.zone5ventures.core.activities.DataFileUploadRecent;
-import com.zone5ventures.core.activities.UserWorkoutFileSearch;
-import com.zone5ventures.core.activities.UserWorkoutResult;
-import com.zone5ventures.core.activities.VActivity;
-import com.zone5ventures.core.enums.ActivityResultType;
-import com.zone5ventures.core.enums.IntensityZoneType;
-import com.zone5ventures.core.search.MappedResult;
-import com.zone5ventures.core.search.MappedSearchResult;
-import com.zone5ventures.core.search.SearchInput;
-import com.zone5ventures.core.search.SearchInputReport;
-import com.zone5ventures.core.utils.GsonManager;
+import com.zone5cloud.core.activities.Activities;
+import com.zone5cloud.core.activities.DataFileUploadContext;
+import com.zone5cloud.core.activities.DataFileUploadIndex;
+import com.zone5cloud.core.activities.DataFileUploadRecent;
+import com.zone5cloud.core.activities.UserWorkoutFileSearch;
+import com.zone5cloud.core.activities.UserWorkoutResult;
+import com.zone5cloud.core.activities.VActivity;
+import com.zone5cloud.core.enums.ActivityResultType;
+import com.zone5cloud.core.enums.IntensityZoneType;
+import com.zone5cloud.core.search.MappedResult;
+import com.zone5cloud.core.search.MappedSearchResult;
+import com.zone5cloud.core.search.SearchInput;
+import com.zone5cloud.core.search.SearchInputReport;
+import com.zone5cloud.core.utils.GsonManager;
 
 import io.reactivex.Observable;
 import okhttp3.MediaType;

@@ -1,12 +1,13 @@
-package com.zone5ventures.retrofit.core.apis;
+package com.zone5cloud.retrofit.core.apis;
 
-import com.zone5ventures.core.oauth.OAuthTokenAlt;
-import com.zone5ventures.core.users.LoginRequest;
-import com.zone5ventures.core.users.LoginResponse;
-import com.zone5ventures.core.users.NewPassword;
-import com.zone5ventures.core.users.RegisterUser;
-import com.zone5ventures.core.users.User;
-import com.zone5ventures.core.users.Users;
+import com.zone5cloud.core.oauth.OAuthTokenAlt;
+import com.zone5cloud.core.users.LoginRequest;
+import com.zone5cloud.core.users.LoginResponse;
+import com.zone5cloud.core.users.NewPassword;
+import com.zone5cloud.core.users.RegisterUser;
+import com.zone5cloud.core.users.User;
+import com.zone5cloud.core.users.UserPreferences;
+import com.zone5cloud.core.users.Users;
 
 import io.reactivex.Observable;
 import retrofit2.Response;
@@ -21,6 +22,14 @@ public interface UserAPI {
 	
     @GET(Users.ME)
     Observable<Response<User>> me();
+    
+    /** Get user's metric/imperial preference */
+    @GET(Users.GET_USER_PREFERENCES)
+    Observable<Response<UserPreferences>> getPreferences(@Path("userId") long userId);
+    
+    /** Set user's metric/imperial preference */
+    @POST(Users.SET_USER_PREFERENCES)
+    Observable<Response<Boolean>> setPreferences(@Body UserPreferences input);
     
     /** Register a new user account */
     @POST(Users.REGISTER_USER)

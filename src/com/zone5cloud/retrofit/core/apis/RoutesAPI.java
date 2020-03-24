@@ -1,14 +1,14 @@
-package com.zone5ventures.retrofit.core.apis;
+package com.zone5cloud.retrofit.core.apis;
 
 import java.io.File;
 
-import com.zone5ventures.core.activities.DataFileUploadIndex;
-import com.zone5ventures.core.routes.Routes;
-import com.zone5ventures.core.routes.UserRoute;
-import com.zone5ventures.core.routes.UserRouteOutputType;
-import com.zone5ventures.core.routes.UserRouteSearch;
-import com.zone5ventures.core.search.SearchResult;
-import com.zone5ventures.core.utils.GsonManager;
+import com.zone5cloud.core.activities.DataFileUploadIndex;
+import com.zone5cloud.core.routes.Routes;
+import com.zone5cloud.core.routes.UserRoute;
+import com.zone5cloud.core.routes.UserRouteOutputType;
+import com.zone5cloud.core.routes.UserRouteSearch;
+import com.zone5cloud.core.search.SearchResult;
+import com.zone5cloud.core.utils.GsonManager;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;

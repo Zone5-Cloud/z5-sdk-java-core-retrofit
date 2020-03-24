@@ -1,9 +1,9 @@
-package com.zone5ventures.retrofit.core.apis;
+package com.zone5cloud.retrofit.core.apis;
 
-import com.zone5ventures.core.enums.UserConnectionsType;
-import com.zone5ventures.core.thirdpartyconnections.ThirdPartyToken;
-import com.zone5ventures.core.thirdpartyconnections.ThirdPartyTokenResponse;
-import com.zone5ventures.core.users.Users;
+import com.zone5cloud.core.enums.UserConnectionsType;
+import com.zone5cloud.core.thirdpartyconnections.ThirdPartyToken;
+import com.zone5cloud.core.thirdpartyconnections.ThirdPartyTokenResponse;
+import com.zone5cloud.core.users.Users;
 
 import io.reactivex.Observable;
 import retrofit2.Response;

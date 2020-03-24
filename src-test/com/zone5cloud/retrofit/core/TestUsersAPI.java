@@ -1,4 +1,4 @@
-package com.zone5ventures.retrofit.core;
+package com.zone5cloud.retrofit.core;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -7,13 +7,15 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import com.zone5ventures.core.oauth.OAuthTokenAlt;
-import com.zone5ventures.core.users.LoginRequest;
-import com.zone5ventures.core.users.LoginResponse;
-import com.zone5ventures.core.users.NewPassword;
-import com.zone5ventures.core.users.RegisterUser;
-import com.zone5ventures.core.users.User;
-import com.zone5ventures.core.utils.GsonManager;
+import com.zone5cloud.core.enums.UnitMeasurement;
+import com.zone5cloud.core.oauth.OAuthTokenAlt;
+import com.zone5cloud.core.users.LoginRequest;
+import com.zone5cloud.core.users.LoginResponse;
+import com.zone5cloud.core.users.NewPassword;
+import com.zone5cloud.core.users.RegisterUser;
+import com.zone5cloud.core.users.User;
+import com.zone5cloud.core.users.UserPreferences;
+import com.zone5cloud.core.utils.GsonManager;
 
 import retrofit2.Response;
 
@@ -124,6 +126,22 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertNotNull(user.getFirstname());
 		assertNotNull(user.getLastname());
 		assertNotNull(user.getEmail());
+	}
+	
+	@Test
+	public void testUserPreferences() {
+		long userId = userApi.me().blockingFirst().body().getId();
+		
+		UserPreferences p = userApi.getPreferences(userId).blockingFirst().body();
+		assertNotNull(p.getMetric());
+		
+		p.setMetric(UnitMeasurement.imperial);
+		assertTrue(userApi.setPreferences(p).blockingFirst().body());
+		assertEquals(UnitMeasurement.imperial, userApi.getPreferences(userId).blockingFirst().body().getMetric());
+		
+		p.setMetric(UnitMeasurement.metric);
+		assertTrue(userApi.setPreferences(p).blockingFirst().body());
+		assertEquals(UnitMeasurement.metric, userApi.getPreferences(userId).blockingFirst().body().getMetric());
 	}
 
 }

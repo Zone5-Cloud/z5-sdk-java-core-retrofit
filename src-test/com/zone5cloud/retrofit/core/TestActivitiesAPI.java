@@ -1,4 +1,4 @@
-package com.zone5ventures.retrofit.core;
+package com.zone5cloud.retrofit.core;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -17,26 +17,26 @@ import java.util.TimeZone;
 
 import org.junit.Test;
 
-import com.zone5ventures.core.activities.Activities;
-import com.zone5ventures.core.activities.DataFileUploadContext;
-import com.zone5ventures.core.activities.DataFileUploadIndex;
-import com.zone5ventures.core.activities.UserWorkoutFileSearch;
-import com.zone5ventures.core.activities.UserWorkoutResult;
-import com.zone5ventures.core.activities.VActivity;
-import com.zone5ventures.core.enums.ActivityResultType;
-import com.zone5ventures.core.enums.ActivityType;
-import com.zone5ventures.core.enums.Equipment;
-import com.zone5ventures.core.enums.FileUploadState;
-import com.zone5ventures.core.enums.IntensityZoneType;
-import com.zone5ventures.core.enums.RelativePeriod;
-import com.zone5ventures.core.enums.UserWorkoutState;
-import com.zone5ventures.core.enums.WorkoutType;
-import com.zone5ventures.core.search.DateRange;
-import com.zone5ventures.core.search.MappedResult;
-import com.zone5ventures.core.search.MappedSearchResult;
-import com.zone5ventures.core.search.Order;
-import com.zone5ventures.core.search.SearchInput;
-import com.zone5ventures.retrofit.core.apis.ActivitiesAPI;
+import com.zone5cloud.retrofit.core.apis.ActivitiesAPI;
+import com.zone5cloud.core.activities.Activities;
+import com.zone5cloud.core.activities.DataFileUploadContext;
+import com.zone5cloud.core.activities.DataFileUploadIndex;
+import com.zone5cloud.core.activities.UserWorkoutFileSearch;
+import com.zone5cloud.core.activities.UserWorkoutResult;
+import com.zone5cloud.core.activities.VActivity;
+import com.zone5cloud.core.enums.ActivityResultType;
+import com.zone5cloud.core.enums.ActivityType;
+import com.zone5cloud.core.enums.Equipment;
+import com.zone5cloud.core.enums.FileUploadState;
+import com.zone5cloud.core.enums.IntensityZoneType;
+import com.zone5cloud.core.enums.RelativePeriod;
+import com.zone5cloud.core.enums.UserWorkoutState;
+import com.zone5cloud.core.enums.WorkoutType;
+import com.zone5cloud.core.search.DateRange;
+import com.zone5cloud.core.search.MappedResult;
+import com.zone5cloud.core.search.MappedSearchResult;
+import com.zone5cloud.core.search.Order;
+import com.zone5cloud.core.search.SearchInput;
 
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -173,7 +173,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		search.getCriteria().setIsNotNull(Arrays.asList("fileId"));
 		
 		// Order by ride start time desc
-		search.getCriteria().setOrder(Arrays.asList(new Order("startTs", com.zone5ventures.core.enums.Order.desc)));
+		search.getCriteria().setOrder(Arrays.asList(new Order("startTs", com.zone5cloud.core.enums.Order.desc)));
 		
 		// Limit to rides with a startTs <= now - ie avoid dodgy files which might have a timestamp in the future!
 		search.getCriteria().setToTs(System.currentTimeMillis());
@@ -208,7 +208,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		search.getCriteria().setSports(Arrays.asList(ActivityType.ride));
 		
 		// Order by ride start time desc
-		search.getCriteria().setOrder(Arrays.asList(new Order("startTs", com.zone5ventures.core.enums.Order.desc)));
+		search.getCriteria().setOrder(Arrays.asList(new Order("startTs", com.zone5cloud.core.enums.Order.desc)));
 		
 		// Limit to rides which were done in the last 12 months
 		search.getCriteria().setFromTs(System.currentTimeMillis() - (1000L*60*60*24*365));
@@ -272,7 +272,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		search.getCriteria().setState(UserWorkoutState.pending);
 		search.getCriteria().setExcludeWorkouts(Arrays.asList(WorkoutType.rest));
 		
-		search.getCriteria().setOrder(Arrays.asList(new Order("scheduled.day", com.zone5ventures.core.enums.Order.desc)));
+		search.getCriteria().setOrder(Arrays.asList(new Order("scheduled.day", com.zone5cloud.core.enums.Order.desc)));
 		
 		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst().body();
 		assertNotNull(results);
@@ -283,7 +283,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		SearchInput<UserWorkoutFileSearch> search = new SearchInput<>(new UserWorkoutFileSearch());
 		
 		search.setFields(Arrays.asList("scheduled.day", "scheduled.tz", "scheduled.name", "scheduled.tscorepwr", "scheduled.durationSecs", "scheduled.distance", "scheduled.workout", "scheduled.preDescr"));
-		search.getCriteria().setOrder(Arrays.asList(new Order("scheduled.day", com.zone5ventures.core.enums.Order.asc)));
+		search.getCriteria().setOrder(Arrays.asList(new Order("scheduled.day", com.zone5cloud.core.enums.Order.asc)));
 		search.getCriteria().setFromTs(System.currentTimeMillis());
 		
 		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst().body();

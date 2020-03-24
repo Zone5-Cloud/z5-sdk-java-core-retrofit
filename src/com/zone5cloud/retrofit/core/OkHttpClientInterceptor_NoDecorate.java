@@ -1,4 +1,4 @@
-package com.zone5ventures.retrofit.core;
+package com.zone5cloud.retrofit.core;
 
 import java.io.IOException;
 

@@ -1,10 +1,10 @@
-package com.zone5ventures.retrofit.core.apis;
+package com.zone5cloud.retrofit.core.apis;
 
-import com.zone5ventures.core.activities.Activities;
-import com.zone5ventures.core.activities.UserWorkoutResultAggregates;
-import com.zone5ventures.core.search.MappedResult;
-import com.zone5ventures.core.search.SearchInput;
-import com.zone5ventures.core.search.SearchInputReport;
+import com.zone5cloud.core.activities.Activities;
+import com.zone5cloud.core.activities.UserWorkoutResultAggregates;
+import com.zone5cloud.core.search.MappedResult;
+import com.zone5cloud.core.search.SearchInput;
+import com.zone5cloud.core.search.SearchInputReport;
 
 import retrofit2.http.Body;
 import retrofit2.http.POST;
