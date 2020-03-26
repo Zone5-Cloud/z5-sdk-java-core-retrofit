@@ -4,7 +4,6 @@
   <artifactId>z5-sdk-java-core-retrofit</artifactId>
   <version>${revision}</version>
   <packaging>jar</packaging>
-
   <repositories>
     <repository>
       <id>core</id>
