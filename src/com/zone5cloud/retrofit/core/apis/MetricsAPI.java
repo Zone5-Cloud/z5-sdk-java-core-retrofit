@@ -14,7 +14,8 @@ import retrofit2.Response;
 public interface MetricsAPI {
 	
 	/** 
-	 * Get aggregate metrics for a given set of users and date ranges.<br>
+	 * Get aggregate metrics for a given set of users or bikes over 1 or more date ranges.<br>
+	 *
 	 * Supported aggregates include;
 	 * 
 	 * <ol>
@@ -25,12 +26,7 @@ public interface MetricsAPI {
 	 * <li>sum - sum of values
 	 * </ol>
 	 * 
-	 * See Activities.newInstanceMetrics(sport, userIds, ranges, fields) for constructing the input object 
-	 * 
-	 * @param sport - required - the sport type
-	 * @param userIds - required - 1 or more userIds can be requested
-	 * @param ranges - the date ranges - 1 or more ranges can be requested. If the ranges overlap it is indeterministic which range the metrics will be included in.
-	 * @param fields - the aggregate fields being requested
+	 * See Activities.newInstanceMetrics() and Activities.newInstanceMetricsBikes() for constructing the input object 
 	 * 
 	 */
     @POST(Activities.METRICS)

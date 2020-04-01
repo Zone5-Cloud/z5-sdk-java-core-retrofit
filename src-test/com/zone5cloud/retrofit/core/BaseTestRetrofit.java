@@ -7,6 +7,7 @@ import com.zone5cloud.retrofit.core.OkHttpClientCookieJar;
 import com.zone5cloud.retrofit.core.OkHttpClientInterceptor_Authorization;
 import com.zone5cloud.retrofit.core.OkHttpClientInterceptor_NoDecorate;
 import com.zone5cloud.retrofit.core.apis.ActivitiesAPI;
+import com.zone5cloud.retrofit.core.apis.MetricsAPI;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
 import com.zone5cloud.core.utils.GsonManager;
 
@@ -19,6 +20,7 @@ public class BaseTestRetrofit extends BaseTest {
 	
 	protected UserAPI userApi = null;
 	protected ActivitiesAPI activitiesApi = null;
+	protected MetricsAPI metricsApi = null;
 	
 	@Before
 	public void init() {
@@ -38,6 +40,7 @@ public class BaseTestRetrofit extends BaseTest {
 
         userApi = retrofit.create(UserAPI.class);
         activitiesApi = retrofit.create(ActivitiesAPI.class);
+        metricsApi = retrofit.create(MetricsAPI.class);
     }
 	
 	public boolean isSpecialized() {
