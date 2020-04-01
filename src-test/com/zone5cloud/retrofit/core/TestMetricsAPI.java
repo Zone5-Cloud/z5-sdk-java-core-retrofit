@@ -1,5 +1,6 @@
 package com.zone5cloud.retrofit.core;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
@@ -17,6 +18,20 @@ public class TestMetricsAPI extends BaseTestRetrofit {
 	public void testQuery() throws Exception {		
 		MappedResult<UserWorkoutResultAggregates> result = metricsApi.metrics(Activities.newInstanceMetricsBikes(null, Arrays.asList("sum.training","sum.distance","sum.ascent","wavg.avgSpeed","max.maxSpeed","wavg.avgWatts","max.maxWatts"), Arrays.asList("d584c5cb-e81f-4fbe-bc0d-667e9bcd2c4c"))).blockingFirst().body();
 		assertNotNull(result.getResults());
+		assertEquals(1, result.getResults().size());
+		assertNotNull(result.getResults().get(0).getSum());
+		assertNotNull(result.getResults().get(0).getSum().getTraining());
+		assertNotNull(result.getResults().get(0).getSum().getDistance());
+		assertNotNull(result.getResults().get(0).getSum().getAscent());
+		assertNotNull(result.getResults().get(0).getMax().getMaxSpeed());
+		assertNotNull(result.getResults().get(0).getMax().getMaxWatts());
+		
+		assertNotNull(result.getResults().get(0).getWavg().getAvgSpeed());
+		assertNotNull(result.getResults().get(0).getWavg().getAvgWatts());
+		assertNotNull(result.getResults().get(0).getCount());
+		assertNotNull(result.getResults().get(0).getUser());
+		assertNotNull(result.getResults().get(0).getName());
+		assertNotNull(result.getResults().get(0).getBike().getUuid());
 		// Assuming you have a match for this bike id, you would have result which looks like;
 		/* {
   "results": [
