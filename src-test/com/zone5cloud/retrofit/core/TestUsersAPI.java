@@ -5,6 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Map;
+
 import org.junit.Test;
 
 import com.zone5cloud.core.enums.UnitMeasurement;
@@ -25,6 +27,15 @@ public class TestUsersAPI extends BaseTestRetrofit {
 	String clientId = null; 	// "<your OAuth clientId issued by Zone5>";
 	String clientSecret = null; // "<your OAuth secret issued by Zone5>";
 		
+	@Test
+	public void getEmailStatus() throws Exception {
+		Map<String,Boolean> m = userApi.getEmailVerification("andrew@todaysplan.com.au").blockingFirst().body();
+		
+		assertTrue(m.get("isVerified"));
+		assertTrue(m.get("Specialized_Terms"));
+		assertTrue(m.get("Specialized_Terms_Apps"));
+	}
+	
 	/** To run this test you need a valid clientId & secret */
 	@Test
 	public void testRegistrationLoginDelete() throws Exception {

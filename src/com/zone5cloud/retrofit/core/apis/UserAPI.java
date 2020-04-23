@@ -1,5 +1,7 @@
 package com.zone5cloud.retrofit.core.apis;
 
+import java.util.Map;
+
 import com.zone5cloud.core.oauth.OAuthTokenAlt;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
@@ -50,6 +52,10 @@ public interface UserAPI {
     /** Test if an email address is already registered in the system - true if the email already exists in the system */
     @POST(Users.EMAIL_EXISTS)
     Observable<Response<Boolean>> isEmailRegistered(@Body String email);
+    
+    /** Test if an email address is already registered in the system - true if the email already exists in the system */
+    @GET(Users.EMAIL_STATUS)
+    Observable<Response<Map<String,Boolean>>> getEmailVerification(@Query("email") String email);
     
     /** Request a password reset email - ie get a magic link to reset a user's password */
     @GET(Users.PASSWORD_RESET)
