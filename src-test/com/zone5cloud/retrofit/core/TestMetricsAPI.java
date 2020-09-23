@@ -31,7 +31,8 @@ public class TestMetricsAPI extends BaseTestRetrofit {
 		assertNotNull(result.getResults().get(0).getCount());
 		assertNotNull(result.getResults().get(0).getUser());
 		assertNotNull(result.getResults().get(0).getName());
-		assertNotNull(result.getResults().get(0).getBike().getUuid());
+		assertNotNull(result.getResults().get(0).getBike().getBikeUuid());
+		assertNotNull(result.getResults().get(0).getBike().getRegistrationId());
 		// Assuming you have a match for this bike id, you would have result which looks like;
 		/* {
   "results": [
