@@ -3,14 +3,11 @@ package com.zone5cloud.retrofit.core;
 import org.junit.Before;
 
 import com.google.gson.Gson;
-import com.zone5cloud.retrofit.core.OkHttpClientCookieJar;
-import com.zone5cloud.retrofit.core.OkHttpClientInterceptor_Authorization;
-import com.zone5cloud.retrofit.core.OkHttpClientInterceptor_NoDecorate;
+import com.zone5cloud.core.utils.GsonManager;
 import com.zone5cloud.retrofit.core.apis.ActivitiesAPI;
 import com.zone5cloud.retrofit.core.apis.MetricsAPI;
 import com.zone5cloud.retrofit.core.apis.ThirdPartyTokenAPI;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
-import com.zone5cloud.core.utils.GsonManager;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
@@ -30,12 +27,13 @@ public class BaseTestRetrofit extends BaseTest {
 		
 		OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
 		OkHttpClientInterceptor_Authorization auth = new OkHttpClientInterceptor_Authorization(authToken);
+		OkHttpClientInterceptor_UserAgent agent = new OkHttpClientInterceptor_UserAgent("ride-iOS/3.6.4 (1320)");
 		
         Gson gson = GsonManager.getInstance();
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(getBaseEndpoint())
-                .client(new OkHttpClient().newBuilder().cookieJar(new OkHttpClientCookieJar()).addInterceptor(nodecorate).addInterceptor(auth).build())
+                .client(new OkHttpClient().newBuilder().cookieJar(new OkHttpClientCookieJar()).addInterceptor(nodecorate).addInterceptor(auth).addInterceptor(agent).build())
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();

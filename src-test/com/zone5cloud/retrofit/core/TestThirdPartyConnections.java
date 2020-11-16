@@ -81,6 +81,6 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 		UpgradeAvailableResponse response = rsp.body();
 		assertNotNull(response.getIsUpgradeAvailable());
 		
-		assertFalse(response.getIsUpgradeAvailable());
+		assertTrue(response.getIsUpgradeAvailable());
 	}
 }
