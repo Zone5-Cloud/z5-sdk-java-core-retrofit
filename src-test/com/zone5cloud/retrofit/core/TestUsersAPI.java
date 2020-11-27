@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Locale;
 import java.util.Map;
 
 import org.junit.Test;
@@ -65,6 +66,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		
 		User user = userApi.register(register).blockingFirst().body();
 		assertNotNull(user.getId()); // our unique userId
+		assertEquals(Locale.getDefault().toString(), user.getLocale());
 		assertEquals(email, user.getEmail());
 		
 		// Note - in S-Digital, the user will need to validate their email before they can login...
@@ -99,6 +101,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertNotNull(r.getToken());
 	
 		setToken(r.getToken());
+		assertEquals(Locale.getDefault().toString(), r.getUser().getLocale());
 		me = userApi.me().blockingFirst().body();
 		assertEquals(me.getId(), user.getId());
 		
@@ -111,9 +114,11 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		setToken(r.getToken());
 		
 		// Exercise the refresh access token
-		OAuthTokenAlt alt = userApi.refreshToken().blockingFirst().body();
-		assertNotNull(alt.getToken());
-		assertNotNull(alt.getTokenExp());
+		if (isSpecialized()) {
+			OAuthTokenAlt alt = userApi.refreshToken().blockingFirst().body();
+			assertNotNull(alt.getToken());
+			assertNotNull(alt.getTokenExp());
+		}
 		
 		// S-Digital Needs to be deleted via GIGYA
 		if (!isSpecialized()) {
