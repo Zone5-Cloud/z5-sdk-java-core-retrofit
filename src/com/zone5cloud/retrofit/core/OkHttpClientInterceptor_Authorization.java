@@ -209,6 +209,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 								Request authRequest = new Request.Builder().url(url).post(body).build();
 								Response response = chain.proceed(authRequest);
 								saveNewToken(Users.NEW_ACCESS_TOKEN, response);
+								response.close();
 							}
 						} else {
 							// do a Gigya refresh
@@ -216,6 +217,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 							Request authRequest = new Request.Builder().url(url).header(HttpHeader.AUTHORIZATION.toString(), token.getBearer()).get().build();
 							Response response = chain.proceed(authRequest);
 							saveNewToken(Users.REFRESH_TOKEN, response);
+							response.close();
 						}
 						
 					} catch(Exception e) {

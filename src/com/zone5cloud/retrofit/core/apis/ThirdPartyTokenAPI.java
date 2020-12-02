@@ -49,10 +49,4 @@ public interface ThirdPartyTokenAPI {
     @DELETE(Users.DEREGISTER_DEVICE_THIRD_PARTY_CONNECTION)
     Observable<Response<Void>> deregisterDeviceWithThirdParty(@Path("token") String token);
 
-    /**
-	 * Query whether an upgrade is available for the current user agent (client app). 
-	 * @returns UpgradeAvailableResponse - object containing isUpdateAvailable: Boolean
-	 */
-    @GET(Users.GET_DEPRECATED)
-    Observable<Response<UpgradeAvailableResponse>> getDeprecated();
 }

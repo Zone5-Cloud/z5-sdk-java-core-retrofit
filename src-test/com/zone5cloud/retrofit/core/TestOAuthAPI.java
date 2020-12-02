@@ -20,6 +20,7 @@ import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.User;
 
+import okhttp3.ResponseBody;
 import retrofit2.Response;
 
 public class TestOAuthAPI extends BaseTestRetrofit {
@@ -43,7 +44,7 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 			assertNotNull(alt.getTokenExp());
 			assertTrue(alt.getTokenExp() > System.currentTimeMillis() + 30000);
 		} else {
-			Response<OAuthToken> response = authAPI.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, auth.getToken().getRefreshToken()).blockingFirst();
+			Response<OAuthToken> response = authApi.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, auth.getToken().getRefreshToken()).blockingFirst();
 			OAuthToken tok = response.body();
 			assertNotNull(tok.getToken());
 			assertNotNull(tok.getTokenExp());
@@ -137,5 +138,21 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		assertTrue(d1.get());
 		assertTrue(d2.get());
 		
+	}
+	
+	@Test
+	public void testErrors() throws Exception {
+		Response<OAuthToken> response = null;
+		if (authToken.getRefreshToken() != null) {
+			response = authApi.refreshAccessToken("bogus client id", "bogus secret", TEST_EMAIL, GrantType.REFRESH_TOKEN, authToken.getRefreshToken()).blockingFirst();
+		} else {
+			auth.setClientIDAndSecret("bogus clientid", "bogus email");
+			response = userApi.refreshToken().blockingFirst();
+		}
+		assertFalse(response.isSuccessful());
+		assertEquals(401, response.code());
+		
+		ResponseBody body = response.errorBody();
+		System.out.println(body.string());
 	}
 }

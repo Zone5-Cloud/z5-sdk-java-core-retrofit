@@ -123,7 +123,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 			assertNotNull(alt.getTokenExp());
 			assertTrue(alt.getTokenExp() > System.currentTimeMillis() + 30000);
 		} else {
-			Response<OAuthToken> response = authAPI.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, r.getRefresh()).blockingFirst();
+			Response<OAuthToken> response = authApi.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, r.getRefresh()).blockingFirst();
 			OAuthToken tok = response.body();
 			assertNotNull(tok.getToken());
 			assertNotNull(tok.getTokenExp());

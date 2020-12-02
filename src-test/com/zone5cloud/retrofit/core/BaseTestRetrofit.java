@@ -13,6 +13,7 @@ import com.zone5cloud.retrofit.core.apis.MetricsAPI;
 import com.zone5cloud.retrofit.core.apis.OAuthAPI;
 import com.zone5cloud.retrofit.core.apis.ThirdPartyTokenAPI;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
+import com.zone5cloud.retrofit.core.apis.UserAgentAPI;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
@@ -24,9 +25,11 @@ public class BaseTestRetrofit extends BaseTest {
 	protected UserAPI userApi = null;
 	protected ActivitiesAPI activitiesApi = null;
 	protected MetricsAPI metricsApi = null;
-	protected ThirdPartyTokenAPI thirdPartyAPI = null;
-	protected OAuthAPI authAPI = null;
-	OkHttpClientInterceptor_Authorization auth = null;
+	protected ThirdPartyTokenAPI thirdPartyApi = null;
+	protected OAuthAPI authApi = null;
+	protected UserAgentAPI agentApi = null;
+	
+	protected OkHttpClientInterceptor_Authorization auth = null;
 	
 	protected AuthToken authToken = null;
 	protected Z5AuthorizationDelegate delegate = new Z5AuthorizationDelegate() {
@@ -54,8 +57,9 @@ public class BaseTestRetrofit extends BaseTest {
         userApi = retrofit.create(UserAPI.class);
         activitiesApi = retrofit.create(ActivitiesAPI.class);
         metricsApi = retrofit.create(MetricsAPI.class);
-        thirdPartyAPI = retrofit.create(ThirdPartyTokenAPI.class);
-        authAPI = retrofit.create(OAuthAPI.class);
+        thirdPartyApi = retrofit.create(ThirdPartyTokenAPI.class);
+        authApi = retrofit.create(OAuthAPI.class);
+        agentApi = retrofit.create(UserAgentAPI.class);
     }
 	
 	public boolean isSpecialized() {
