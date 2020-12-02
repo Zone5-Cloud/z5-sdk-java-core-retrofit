@@ -3,6 +3,7 @@ package com.zone5cloud.retrofit.core;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Locale;
@@ -10,7 +11,9 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import com.zone5cloud.core.enums.GrantType;
 import com.zone5cloud.core.enums.UnitMeasurement;
+import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.oauth.OAuthTokenAlt;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
@@ -23,18 +26,12 @@ import com.zone5cloud.core.utils.GsonManager;
 import retrofit2.Response;
 
 public class TestUsersAPI extends BaseTestRetrofit {
-
-	// This is your allocated clientId and secret - these can be set to null for S-Digital environments
-	String clientId = null; 	// "<your OAuth clientId issued by Zone5>";
-	String clientSecret = null; // "<your OAuth secret issued by Zone5>";
 		
 	@Test
 	public void getEmailStatus() throws Exception {
-		Map<String,Boolean> m = userApi.getEmailVerification("andrew@todaysplan.com.au").blockingFirst().body();
-		
-		assertTrue(m.get("isVerified"));
-		assertTrue(m.get("Specialized_Terms"));
-		assertTrue(m.get("Specialized_Terms_Apps"));
+		Response<Boolean> responseExists = userApi.isEmailRegistered(TEST_EMAIL).blockingFirst();
+		assertTrue(responseExists.isSuccessful());
+		assertTrue(responseExists.body());
 	}
 	
 	/** To run this test you need a valid clientId & secret */
@@ -76,12 +73,16 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		}
 		
 		// Login and set our bearer token
-		LoginRequest login = new LoginRequest(email, password, clientId, clientSecret);
+		LoginRequest login = new LoginRequest(email, password, clientID, clientSecret);
 		System.out.println(GsonManager.getInstance(true).toJson(login));
 		
-		LoginResponse r = userApi.login(login).blockingFirst().body();
+		assertNull(authToken);
+		Response<LoginResponse> responseAuth = userApi.login(login).blockingFirst();
+		assertTrue(responseAuth.isSuccessful());
+		LoginResponse r = responseAuth.body();
 		assertNotNull(r.getToken());
-		setToken(r.getToken());
+		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
+		assertNotNull(authToken);
 		
 		// Try it out!
 		User me = userApi.me().blockingFirst().body();
@@ -89,18 +90,20 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		
 		// check that this user is now considered registered
 		assertTrue(userApi.isEmailRegistered(email).blockingFirst().body());
+		assertNotNull(authToken);
 		assertTrue(userApi.logout().blockingFirst().body());
-		setToken(null);
+		assertNull(authToken);
+		
 		assertTrue(userApi.isEmailRegistered(email).blockingFirst().body());
 		
 		// Oops I forgot my password - send me an email with a magic link
 		assertTrue(userApi.resetPassword(email).blockingFirst().body());
 		
 		// Log back in
-		r = userApi.login(new LoginRequest(email, password, clientId, clientSecret)).blockingFirst().body();
+		r = userApi.login(new LoginRequest(email, password, clientID, clientSecret)).blockingFirst().body();
 		assertNotNull(r.getToken());
-	
-		setToken(r.getToken());
+		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
+		
 		assertEquals(Locale.getDefault().toString(), r.getUser().getLocale());
 		me = userApi.me().blockingFirst().body();
 		assertEquals(me.getId(), user.getId());
@@ -109,15 +112,23 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertEquals(200, userApi.changePasswordSpecialized(new NewPassword(password, "myNewPassword123!!")).blockingFirst().code());
 		assertTrue(userApi.logout().blockingFirst().body());
 		
-		r = userApi.login(new LoginRequest(email, "myNewPassword123!!", clientId, clientSecret)).blockingFirst().body();
+		r = userApi.login(new LoginRequest(email, "myNewPassword123!!", clientID, clientSecret)).blockingFirst().body();
 		assertNotNull(r.getToken());
-		setToken(r.getToken());
+		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
 		
 		// Exercise the refresh access token
 		if (isSpecialized()) {
-			OAuthTokenAlt alt = userApi.refreshToken().blockingFirst().body();
+			OAuthToken alt = userApi.refreshToken().blockingFirst().body();
 			assertNotNull(alt.getToken());
 			assertNotNull(alt.getTokenExp());
+			assertTrue(alt.getTokenExp() > System.currentTimeMillis() + 30000);
+		} else {
+			Response<OAuthToken> response = authAPI.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, r.getRefresh()).blockingFirst();
+			OAuthToken tok = response.body();
+			assertNotNull(tok.getToken());
+			assertNotNull(tok.getTokenExp());
+			assertNotNull(tok.getRefreshToken());
+			assertTrue(tok.getTokenExp() > System.currentTimeMillis() + 30000);
 		}
 		
 		// S-Digital Needs to be deleted via GIGYA
@@ -127,14 +138,15 @@ public class TestUsersAPI extends BaseTestRetrofit {
 			
 			// We are no longer valid!
 			assertEquals(401, userApi.me().blockingFirst().code());
-			setToken(null);
 			
-			assertEquals(401, userApi.login(new LoginRequest(email, password, clientId, clientSecret)).blockingFirst().code());
+			assertEquals(401, userApi.login(new LoginRequest(email, password, clientID, clientSecret)).blockingFirst().code());
 		}
 	}
 		
 	@Test
 	public void testMe() {
+		login();
+		
 		Response<User> rsp = userApi.me().blockingFirst();
 		assertEquals(200, rsp.code());
 		User user = rsp.body();
@@ -146,6 +158,8 @@ public class TestUsersAPI extends BaseTestRetrofit {
 	
 	@Test
 	public void testUserPreferences() {
+		login();
+		
 		long userId = userApi.me().blockingFirst().body().getId();
 		
 		UserPreferences p = userApi.getPreferences(userId).blockingFirst().body();
@@ -159,5 +173,4 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertTrue(userApi.setPreferences(p).blockingFirst().body());
 		assertEquals(UnitMeasurement.metric, userApi.getPreferences(userId).blockingFirst().body().getMetric());
 	}
-
 }

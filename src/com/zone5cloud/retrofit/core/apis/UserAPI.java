@@ -2,6 +2,7 @@ package com.zone5cloud.retrofit.core.apis;
 
 import java.util.Map;
 
+import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.oauth.OAuthTokenAlt;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
@@ -53,7 +54,7 @@ public interface UserAPI {
     @POST(Users.EMAIL_EXISTS)
     Observable<Response<Boolean>> isEmailRegistered(@Body String email);
     
-    /** Test if an email address is already registered in the system - true if the email already exists in the system */
+    /** Returns the status of email verification for the given user */
     @GET(Users.EMAIL_STATUS)
     Observable<Response<Map<String,Boolean>>> getEmailVerification(@Query("email") String email);
     
@@ -71,5 +72,5 @@ public interface UserAPI {
 	
     /** Refresh a bearer token - get a new token if the current one is nearing expiry */
     @GET(Users.REFRESH_TOKEN)
-    Observable<Response<OAuthTokenAlt>> refreshToken();
+    Observable<Response<OAuthToken>> refreshToken();
 }

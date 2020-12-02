@@ -3,9 +3,14 @@ package com.zone5cloud.retrofit.core;
 import org.junit.Before;
 
 import com.google.gson.Gson;
+import com.zone5cloud.core.Z5AuthorizationDelegate;
+import com.zone5cloud.core.oauth.AuthToken;
+import com.zone5cloud.core.users.LoginRequest;
+import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.utils.GsonManager;
 import com.zone5cloud.retrofit.core.apis.ActivitiesAPI;
 import com.zone5cloud.retrofit.core.apis.MetricsAPI;
+import com.zone5cloud.retrofit.core.apis.OAuthAPI;
 import com.zone5cloud.retrofit.core.apis.ThirdPartyTokenAPI;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
 
@@ -20,20 +25,28 @@ public class BaseTestRetrofit extends BaseTest {
 	protected ActivitiesAPI activitiesApi = null;
 	protected MetricsAPI metricsApi = null;
 	protected ThirdPartyTokenAPI thirdPartyAPI = null;
+	protected OAuthAPI authAPI = null;
+	OkHttpClientInterceptor_Authorization auth = null;
+	
+	protected AuthToken authToken = null;
+	protected Z5AuthorizationDelegate delegate = new Z5AuthorizationDelegate() {
+		@Override
+		public void onAuthTokenUpdated(AuthToken token) {
+			authToken = token;
+		}
+	};
 	
 	@Before
 	public void init() {
-		String authToken = super.token;
-		
 		OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
-		OkHttpClientInterceptor_Authorization auth = new OkHttpClientInterceptor_Authorization(authToken);
+		auth = new OkHttpClientInterceptor_Authorization(authToken, clientID, clientSecret, delegate);
 		OkHttpClientInterceptor_UserAgent agent = new OkHttpClientInterceptor_UserAgent("ride-iOS/3.6.4 (1320)");
 		
         Gson gson = GsonManager.getInstance();
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(getBaseEndpoint())
-                .client(new OkHttpClient().newBuilder().cookieJar(new OkHttpClientCookieJar()).addInterceptor(nodecorate).addInterceptor(auth).addInterceptor(agent).build())
+                .client(new OkHttpClient.Builder().cookieJar(new OkHttpClientCookieJar()).addInterceptor(nodecorate).addInterceptor(agent).addInterceptor(auth).build())
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();
@@ -42,14 +55,15 @@ public class BaseTestRetrofit extends BaseTest {
         activitiesApi = retrofit.create(ActivitiesAPI.class);
         metricsApi = retrofit.create(MetricsAPI.class);
         thirdPartyAPI = retrofit.create(ThirdPartyTokenAPI.class);
+        authAPI = retrofit.create(OAuthAPI.class);
     }
 	
 	public boolean isSpecialized() {
 		return getBaseEndpoint() != null && (getBaseEndpoint().equals("https://api-sp.todaysplan.com.au") || getBaseEndpoint().equals("https://api-sp-staging.todaysplan.com.au"));
 	}
 	
-	protected void setToken(String token) {
-		super.token = token;
-		init();
+	protected LoginResponse login() {
+		return userApi.login(new LoginRequest(TEST_EMAIL, TEST_PASSWORD, clientID, clientSecret)).blockingFirst().body();
 	}
+
 }
