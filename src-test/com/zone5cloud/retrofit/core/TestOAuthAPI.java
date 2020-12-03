@@ -14,13 +14,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.zone5cloud.core.Z5AuthorizationDelegate;
+import com.zone5cloud.core.Z5Error;
 import com.zone5cloud.core.enums.GrantType;
 import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.User;
+import com.zone5cloud.retrofit.core.utilities.Z5Utilities;
 
-import okhttp3.ResponseBody;
 import retrofit2.Response;
 
 public class TestOAuthAPI extends BaseTestRetrofit {
@@ -30,15 +31,17 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 	@Before
 	public void setup() throws IOException {
 		LoginResponse response = login();
-		id = response.getUser().getId();
-		email = response.getUser().getEmail();
+		if (response != null) {
+			id = response.getUser().getId();
+			email = response.getUser().getEmail();
+		}
 	}
 
 	@Test
 	public void testManualRefresh() {
 		
 		// Exercise the refresh access token
-		if (isSpecialized()) {
+		if (isGigya()) {
 			OAuthToken alt = userApi.refreshToken().blockingFirst().body();
 			assertNotNull(alt.getToken());
 			assertNotNull(alt.getTokenExp());
@@ -74,9 +77,11 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		// check token has been updated
 		AuthToken newToken = auth.getToken();
 		
-		assertNotEquals(currentToken.getToken(), newToken.getToken());
-		assertEquals(currentToken.getRefreshToken(), newToken.getRefreshToken());
-		assertTrue(newToken.getTokenExp() > System.currentTimeMillis() + 30000);
+		if (authToken.getRefreshToken() != null) {
+			assertNotEquals(currentToken.getToken(), newToken.getToken());
+			assertEquals(currentToken.getRefreshToken(), newToken.getRefreshToken());
+			assertTrue(newToken.getTokenExp() > System.currentTimeMillis() + 30000);
+		}
 	}
 	
 	@Test
@@ -136,23 +141,25 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		s1.acquire();
 		s2.acquire();
 		assertTrue(d1.get());
-		assertTrue(d2.get());
-		
+		assertTrue(d2.get());	
 	}
 	
 	@Test
-	public void testErrors() throws Exception {
-		Response<OAuthToken> response = null;
-		if (authToken.getRefreshToken() != null) {
-			response = authApi.refreshAccessToken("bogus client id", "bogus secret", TEST_EMAIL, GrantType.REFRESH_TOKEN, authToken.getRefreshToken()).blockingFirst();
-		} else {
-			auth.setClientIDAndSecret("bogus clientid", "bogus email");
-			response = userApi.refreshToken().blockingFirst();
+	public void testAdhocToken() {
+		// only applicable on SBC servers
+		if (isSpecialized()) {
+			Response<OAuthToken> response = authApi.adhocAccessToken("wahooride").blockingSingle();
+			String errorString = "";
+			if (!response.isSuccessful()) {
+				Z5Error error = Z5Utilities.parseErrorResponse(response);
+				errorString = error.getMessage();
+			}
+			assertTrue(errorString, response.isSuccessful());
+			OAuthToken token = response.body();
+			assertNotNull("Returned token should not be null", token);
+			assertNotNull("Token should be valid", token.getToken());
+			assertNotNull("Token should have an expiry", token.getExpiresIn());
+			assertNotNull("Token should havea  scope", token.getScope());
 		}
-		assertFalse(response.isSuccessful());
-		assertEquals(401, response.code());
-		
-		ResponseBody body = response.errorBody();
-		System.out.println(body.string());
 	}
 }

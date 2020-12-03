@@ -7,14 +7,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Locale;
-import java.util.Map;
 
 import org.junit.Test;
 
 import com.zone5cloud.core.enums.GrantType;
 import com.zone5cloud.core.enums.UnitMeasurement;
 import com.zone5cloud.core.oauth.OAuthToken;
-import com.zone5cloud.core.oauth.OAuthTokenAlt;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.NewPassword;
@@ -39,10 +37,11 @@ public class TestUsersAPI extends BaseTestRetrofit {
 	public void testRegistrationLoginDelete() throws Exception {
 		
 		// You should set this to an email you control ...
-		String email = String.format("andrew+%d@todaysplan.com.au", System.currentTimeMillis());
+		String emailParts[] = TEST_EMAIL.split("@");
+		String email = String.format("%s+%d@%s", emailParts[0], System.currentTimeMillis(), emailParts[1]);
 		String password = "superS3cretStu55";
-		String firstname = "Andrew";
-		String lastname = "Hall";
+		String firstname = "Test";
+		String lastname = "User";
 		
 		RegisterUser register = new RegisterUser();
 		register.setEmail(email);
@@ -67,7 +66,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertEquals(email, user.getEmail());
 		
 		// Note - in S-Digital, the user will need to validate their email before they can login...
-		if (isSpecialized()) {
+		if (isGigya() && !SBC_NO_VERIFICATION_GIGYA.equals(clientID)) {
 			System.out.println("Waiting for confirmation that you have verified your email address ... press Enter when done");
 			System.in.read();
 		}
@@ -117,7 +116,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
 		
 		// Exercise the refresh access token
-		if (isSpecialized()) {
+		if (isGigya()) {
 			OAuthToken alt = userApi.refreshToken().blockingFirst().body();
 			assertNotNull(alt.getToken());
 			assertNotNull(alt.getTokenExp());
@@ -132,7 +131,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		}
 		
 		// S-Digital Needs to be deleted via GIGYA
-		if (!isSpecialized()) {
+		if (!isGigya()) {
 			// Delete this account
 			assertEquals(204, userApi.delete(me.getId()).blockingFirst().code());
 			

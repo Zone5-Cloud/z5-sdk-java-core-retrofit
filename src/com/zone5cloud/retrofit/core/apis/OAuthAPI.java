@@ -8,7 +8,9 @@ import io.reactivex.Observable;
 import retrofit2.Response;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 
 public interface OAuthAPI {
 
@@ -16,5 +18,8 @@ public interface OAuthAPI {
 	@FormUrlEncoded
 	@POST(Users.NEW_ACCESS_TOKEN)
 	Observable<Response<OAuthToken>> refreshAccessToken(@Field("client_id") String clientId, @Field("client_secret") String secret, @Field("username") String username, @Field("grant_type") GrantType type, @Field("refresh_token") String refreshToken);
-    
+  
+	/** Get a new adhoc auth token - this may be on behalf of another app */
+	@GET(Users.NEW_ADHOC_ACCESS_TOKEN)
+	Observable<Response<OAuthToken>> adhocAccessToken(@Path("clientId") String clientId);
 }

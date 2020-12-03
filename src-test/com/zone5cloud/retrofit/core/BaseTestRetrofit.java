@@ -1,5 +1,7 @@
 package com.zone5cloud.retrofit.core;
 
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Before;
 
 import com.google.gson.Gson;
@@ -16,6 +18,7 @@ import com.zone5cloud.retrofit.core.apis.UserAPI;
 import com.zone5cloud.retrofit.core.apis.UserAgentAPI;
 
 import okhttp3.OkHttpClient;
+import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -43,7 +46,7 @@ public class BaseTestRetrofit extends BaseTest {
 	public void init() {
 		OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
 		auth = new OkHttpClientInterceptor_Authorization(authToken, clientID, clientSecret, delegate);
-		OkHttpClientInterceptor_UserAgent agent = new OkHttpClientInterceptor_UserAgent("ride-iOS/3.6.4 (1320)");
+		OkHttpClientInterceptor_UserAgent agent = new OkHttpClientInterceptor_UserAgent("ride-iOS/3.6.4 (1)");
 		
         Gson gson = GsonManager.getInstance();
 
@@ -66,8 +69,14 @@ public class BaseTestRetrofit extends BaseTest {
 		return getBaseEndpoint() != null && (getBaseEndpoint().equals("https://api-sp.todaysplan.com.au") || getBaseEndpoint().equals("https://api-sp-staging.todaysplan.com.au"));
 	}
 	
+	public boolean isGigya() {
+		return isSpecialized() && clientSecret == null;
+	}
+	
 	protected LoginResponse login() {
-		return userApi.login(new LoginRequest(TEST_EMAIL, TEST_PASSWORD, clientID, clientSecret)).blockingFirst().body();
+		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL, TEST_PASSWORD, clientID, clientSecret)).blockingFirst();
+		assertTrue("Failed to login - please check configuration in BaseTest.java", response.isSuccessful());
+		return response.body();
 	}
 
 }

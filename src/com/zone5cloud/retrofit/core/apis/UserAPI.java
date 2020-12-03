@@ -3,7 +3,6 @@ package com.zone5cloud.retrofit.core.apis;
 import java.util.Map;
 
 import com.zone5cloud.core.oauth.OAuthToken;
-import com.zone5cloud.core.oauth.OAuthTokenAlt;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.NewPassword;

@@ -14,7 +14,6 @@ import com.zone5cloud.core.enums.GrantType;
 import com.zone5cloud.core.enums.HttpHeader;
 import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.oauth.OAuthToken;
-import com.zone5cloud.core.oauth.OAuthTokenAlt;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.Users;
 import com.zone5cloud.core.utils.GsonManager;
@@ -187,7 +186,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		// check the token for expiry
 		// note that refresh itself does not require auth so will not end up cyclicly back here
 		AuthToken token = this.token.get();
-		if (token != null && token.isExpired() && chain != null && baseUrl != null && !baseUrl.isEmpty()) {
+		if (token != null && token.getRefreshToken() != null && token.isExpired() && chain != null && baseUrl != null && !baseUrl.isEmpty()) {
 			// because requests can be concurrent, we need to synchronize so that we only do one refresh for an expired token
 			// and all of the requests dependent on that refresh are queued until the token is refreshed
 			synchronized(fetchTokenLock) {
@@ -213,6 +212,9 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 							}
 						} else {
 							// do a Gigya refresh
+							// note: I put a check for getRefreshToken() into the entry if block
+							// which will exclude this case from being hit. If we want to support Gigya token refresh
+							// remove the getRefreshToken() != null check from the entry if statement at the start of this method
 							String url = baseUrl + Users.REFRESH_TOKEN;
 							Request authRequest = new Request.Builder().url(url).header(HttpHeader.AUTHORIZATION.toString(), token.getBearer()).get().build();
 							Response response = chain.proceed(authRequest);

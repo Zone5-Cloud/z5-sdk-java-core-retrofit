@@ -5,7 +5,6 @@ import com.zone5cloud.core.thirdpartyconnections.PushRegistration;
 import com.zone5cloud.core.thirdpartyconnections.PushRegistrationResponse;
 import com.zone5cloud.core.thirdpartyconnections.ThirdPartyToken;
 import com.zone5cloud.core.thirdpartyconnections.ThirdPartyTokenResponse;
-import com.zone5cloud.core.thirdpartyconnections.UpgradeAvailableResponse;
 import com.zone5cloud.core.users.Users;
 
 import io.reactivex.Observable;
