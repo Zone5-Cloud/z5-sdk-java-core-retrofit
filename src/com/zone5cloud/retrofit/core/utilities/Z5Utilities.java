@@ -26,4 +26,6 @@ public class Z5Utilities {
 		
 		return null;
 	}
+	
+	private Z5Utilities() {}
 }
