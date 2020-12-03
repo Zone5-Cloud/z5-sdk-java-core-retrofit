@@ -5,7 +5,6 @@ import com.zone5cloud.core.thirdpartyconnections.PushRegistration;
 import com.zone5cloud.core.thirdpartyconnections.PushRegistrationResponse;
 import com.zone5cloud.core.thirdpartyconnections.ThirdPartyToken;
 import com.zone5cloud.core.thirdpartyconnections.ThirdPartyTokenResponse;
-import com.zone5cloud.core.thirdpartyconnections.UpgradeAvailableResponse;
 import com.zone5cloud.core.users.Users;
 
 import io.reactivex.Observable;
@@ -49,10 +48,4 @@ public interface ThirdPartyTokenAPI {
     @DELETE(Users.DEREGISTER_DEVICE_THIRD_PARTY_CONNECTION)
     Observable<Response<Void>> deregisterDeviceWithThirdParty(@Path("token") String token);
 
-    /**
-	 * Query whether an upgrade is available for the current user agent (client app). 
-	 * @returns UpgradeAvailableResponse - object containing isUpdateAvailable: Boolean
-	 */
-    @GET(Users.GET_DEPRECATED)
-    Observable<Response<UpgradeAvailableResponse>> getDeprecated();
 }
