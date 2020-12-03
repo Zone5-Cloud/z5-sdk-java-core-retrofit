@@ -2,7 +2,7 @@ package com.zone5cloud.retrofit.core;
 
 import java.io.IOException;
 
-import com.zone5cloud.core.enums.HttpHeader;
+import com.zone5cloud.core.enums.Z5HttpHeader;
 
 import okhttp3.Interceptor;
 import okhttp3.Request;
@@ -21,7 +21,7 @@ public class OkHttpClientInterceptor_UserAgent implements Interceptor {
 		Request originalRequest = chain.request();
 		Request.Builder builder = originalRequest.newBuilder();
 		if (agent != null)
-			builder = builder.header(HttpHeader.USER_AGENT.toString(), agent);
+			builder = builder.header(Z5HttpHeader.USER_AGENT.toString(), agent);
         Request newRequest = builder.build();
         return chain.proceed(newRequest);
 	}

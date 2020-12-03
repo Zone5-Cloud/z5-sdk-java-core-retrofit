@@ -11,7 +11,7 @@ import com.zone5cloud.core.Endpoints;
 import com.zone5cloud.core.Types;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
 import com.zone5cloud.core.enums.GrantType;
-import com.zone5cloud.core.enums.HttpHeader;
+import com.zone5cloud.core.enums.Z5HttpHeader;
 import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.users.LoginResponse;
@@ -147,19 +147,19 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 			// refetch token after potential refresh
 			token = this.token.get();
 			if (token != null && token.getBearer() != null) {
-				builder = builder.header(HttpHeader.AUTHORIZATION.toString(), token.getBearer());
+				builder = builder.header(Z5HttpHeader.AUTHORIZATION.toString(), token.getBearer());
 			}
 		}
 		
 		// APIKey headers go on unauthenticated requests too
 		String clientID = this.clientID;
 		if (clientID != null) {
-			builder = builder.header(HttpHeader.API_KEY.toString(), clientID);
+			builder = builder.header(Z5HttpHeader.API_KEY.toString(), clientID);
 		}
 		
 		String clientSecret = this.clientSecret;
 		if (clientSecret != null) {
-			builder = builder.header(HttpHeader.API_KEY_SECRET.toString(), clientSecret);
+			builder = builder.header(Z5HttpHeader.API_KEY_SECRET.toString(), clientSecret);
 		}
 		
         Request newRequest = builder.build();
@@ -216,7 +216,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 							// which will exclude this case from being hit. If we want to support Gigya token refresh
 							// remove the getRefreshToken() != null check from the entry if statement at the start of this method
 							String url = baseUrl + Users.REFRESH_TOKEN;
-							Request authRequest = new Request.Builder().url(url).header(HttpHeader.AUTHORIZATION.toString(), token.getBearer()).get().build();
+							Request authRequest = new Request.Builder().url(url).header(Z5HttpHeader.AUTHORIZATION.toString(), token.getBearer()).get().build();
 							Response response = chain.proceed(authRequest);
 							saveNewToken(Users.REFRESH_TOKEN, response);
 							response.close();
