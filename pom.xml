@@ -72,7 +72,7 @@
 		<dependency>
 			<groupId>com.zone5cloud</groupId>
   			<artifactId>z5-sdk-java-core</artifactId>
-  			<version>1.3.2</version>
+  			<version>1.4.0</version>
 		</dependency>
 
 		<dependency>

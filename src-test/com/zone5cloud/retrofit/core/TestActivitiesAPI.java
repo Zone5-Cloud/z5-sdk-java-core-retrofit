@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.zone5cloud.retrofit.core.apis.ActivitiesAPI;
@@ -43,6 +44,11 @@ import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 
 public class TestActivitiesAPI extends BaseTestRetrofit {
+	
+	@Before
+	public void setup() {
+		login();
+	}
 	
 	@Test
 	public void testUploadWithNoMetadata() throws Exception {
@@ -149,6 +155,9 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 			index = activitiesApi.uploadStatus(index.getId()).blockingFirst().body();
 		}
 		
+		// the state returns finished before post processing has finished. Give it some more time.
+		Thread.sleep(5000L);
+		
 		// Search specifically for this file by it's resultId - and make sure our custom name and equipment type stuck
 		SearchInput<UserWorkoutFileSearch> search = new SearchInput<>(new UserWorkoutFileSearch());
 		search.getCriteria().setActivities(Arrays.asList(new VActivity(index.getResultId(), ActivityResultType.files)));
@@ -157,7 +166,7 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		assertEquals(1, results.getResult().getResults().size());
 		assertEquals("Epic ride", results.getResult().getResults().get(0).getName());
 		assertEquals(Equipment.gravel, results.getResult().getResults().get(0).getEquipment());
-
+		
 		// Delete it
 		assertTrue(activitiesApi.delete(ActivityResultType.files, index.getResultId()).blockingFirst().body());
 	}
