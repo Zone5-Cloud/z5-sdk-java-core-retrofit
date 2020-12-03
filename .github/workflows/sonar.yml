@@ -23,5 +23,4 @@ jobs:
         SONAR_LOGIN: ${{ secrets.SONAR_LOGIN }}
         CICD_PAT: ${{ secrets.CICD_PAT }}
       run: |
-        echo "<settings><servers><server><id>core</id><username>zone5-sdk-sdigital</username><password>${CICD_PAT}</password></server><server><id>github</id><username>${USER}</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-        mvn verify sonar:sonar -Pcicd -Dsonarlogin=${SONAR_LOGIN}
+        mvn verify -Djacoco.skip=true sonar:sonar -Pcicd -Dsonarlogin=${SONAR_LOGIN}

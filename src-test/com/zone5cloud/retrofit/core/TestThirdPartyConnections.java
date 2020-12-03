@@ -35,9 +35,9 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 		rsp = thirdPartyApi.hasThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
 		assertTrue(rsp.getAvailable());
 		assertEquals("abc123", rsp.getToken().getToken());
-		assertEquals("refreshme", rsp.getToken().getRefresh_token());
+		assertEquals("refreshme", rsp.getToken().getRefreshToken());
 		assertEquals("notmuch", rsp.getToken().getScope());
-		assertNotNull(rsp.getToken().getExpires_in());
+		assertNotNull(rsp.getToken().getExpiresIn());
 		
 		rsp = thirdPartyApi.removeThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
 		assertTrue(rsp.getSuccess());
