@@ -69,10 +69,6 @@ public class BaseTestRetrofit extends BaseTest {
 		return getBaseEndpoint() != null && (getBaseEndpoint().equals("https://api-sp.todaysplan.com.au") || getBaseEndpoint().equals("https://api-sp-staging.todaysplan.com.au"));
 	}
 	
-	public boolean isGigya() {
-		return isSpecialized() && clientSecret == null;
-	}
-	
 	protected LoginResponse login() {
 		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL, TEST_PASSWORD, clientID, clientSecret)).blockingFirst();
 		assertTrue("Failed to login - please check configuration in BaseTest.java", response.isSuccessful());

@@ -48,18 +48,26 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		setup();
 		
 		// Exercise the refresh access token
-		if (isGigya()) {
+		if (isSpecialized() && authToken.getRefreshToken() == null) {
+			// gigya
 			OAuthToken alt = userApi.refreshToken().blockingFirst().body();
 			assertNotNull(alt.getToken());
 			assertNotNull(alt.getTokenExp());
 			assertTrue(alt.getTokenExp() > System.currentTimeMillis() + 30000);
-		} else {
-			Response<OAuthToken> response = authApi.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, auth.getToken().getRefreshToken()).blockingFirst();
+		} else if (authToken.getRefreshToken() != null){
+			// cognito
+			Response<OAuthToken> response = authApi.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, authToken.getRefreshToken()).blockingFirst();
 			OAuthToken tok = response.body();
 			assertNotNull(tok.getToken());
 			assertNotNull(tok.getTokenExp());
 			assertNotNull(tok.getRefreshToken());
 			assertTrue(tok.getTokenExp() > System.currentTimeMillis() + 30000);
+		} else {
+			// legacy tp token with no refresh
+			Response<OAuthToken> response = authApi.newAccessToken(clientID, clientSecret, email, GrantType.USERNAME_PASSWORD, TEST_PASSWORD).blockingFirst();
+			OAuthToken tok = response.body();
+			assertNotNull(tok.getToken());
+			assertNotNull(tok.getTokenExp());
 		}
 		
 		// check access after refresh

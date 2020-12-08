@@ -66,7 +66,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertEquals(email, user.getEmail());
 		
 		// Note - in S-Digital, the user will need to validate their email before they can login...
-		if (isGigya() && !SBC_NO_VERIFICATION_GIGYA.equals(clientID)) {
+		if (isSpecialized() && clientID == null) {
 			System.out.println("Waiting for confirmation that you have verified your email address ... press Enter when done");
 			System.in.read();
 		}
@@ -116,12 +116,14 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
 		
 		// Exercise the refresh access token
-		if (isGigya()) {
+		if (isSpecialized() && r.getRefresh() == null) {
+			// gigya token
 			OAuthToken alt = userApi.refreshToken().blockingFirst().body();
 			assertNotNull(alt.getToken());
 			assertNotNull(alt.getTokenExp());
 			assertTrue(alt.getTokenExp() > System.currentTimeMillis() + 30000);
-		} else {
+		} else if (r.getRefresh() != null){
+			// cognito token
 			Response<OAuthToken> response = authApi.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, r.getRefresh()).blockingFirst();
 			OAuthToken tok = response.body();
 			assertNotNull(tok.getToken());
@@ -130,8 +132,8 @@ public class TestUsersAPI extends BaseTestRetrofit {
 			assertTrue(tok.getTokenExp() > System.currentTimeMillis() + 30000);
 		}
 		
-		// S-Digital Needs to be deleted via GIGYA
-		if (!isGigya()) {
+		// Gigya needs to be deleted via GIGYA
+		if (!isSpecialized() && r.getRefresh() == null) {
 			// Delete this account
 			assertEquals(204, userApi.delete(me.getId()).blockingFirst().code());
 			
