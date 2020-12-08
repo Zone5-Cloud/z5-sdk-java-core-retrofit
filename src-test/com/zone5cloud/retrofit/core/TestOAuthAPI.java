@@ -7,10 +7,17 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.zone5cloud.core.Z5AuthorizationDelegate;
@@ -28,7 +35,6 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 	private String email = "";
 	private Long id = null;
 	
-	@Before
 	public void setup() throws IOException {
 		LoginResponse response = login();
 		if (response != null) {
@@ -38,21 +44,30 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 	}
 
 	@Test
-	public void testManualRefresh() {
+	public void testManualRefresh() throws IOException {
+		setup();
 		
 		// Exercise the refresh access token
-		if (isGigya()) {
+		if (isSpecialized() && authToken.getRefreshToken() == null) {
+			// gigya
 			OAuthToken alt = userApi.refreshToken().blockingFirst().body();
 			assertNotNull(alt.getToken());
 			assertNotNull(alt.getTokenExp());
 			assertTrue(alt.getTokenExp() > System.currentTimeMillis() + 30000);
-		} else {
-			Response<OAuthToken> response = authApi.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, auth.getToken().getRefreshToken()).blockingFirst();
+		} else if (authToken.getRefreshToken() != null){
+			// cognito
+			Response<OAuthToken> response = authApi.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, authToken.getRefreshToken()).blockingFirst();
 			OAuthToken tok = response.body();
 			assertNotNull(tok.getToken());
 			assertNotNull(tok.getTokenExp());
 			assertNotNull(tok.getRefreshToken());
 			assertTrue(tok.getTokenExp() > System.currentTimeMillis() + 30000);
+		} else {
+			// legacy tp token with no refresh
+			Response<OAuthToken> response = authApi.newAccessToken(clientID, clientSecret, email, GrantType.USERNAME_PASSWORD, TEST_PASSWORD).blockingFirst();
+			OAuthToken tok = response.body();
+			assertNotNull(tok.getToken());
+			assertNotNull(tok.getTokenExp());
 		}
 		
 		// check access after refresh
@@ -61,7 +76,9 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 	}
 	
 	@Test
-	public void testAutoRefresh() {
+	public void testAutoRefresh() throws IOException {
+		setup();
+		
 		AuthToken currentToken = auth.getToken();
 		
 		// expire the token to force the refresh sequence
@@ -144,8 +161,72 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		assertTrue(d2.get());	
 	}
 	
+	
+	
+	@Test
+	public void testDelegateOrder() throws InterruptedException, ExecutionException {
+		final ConcurrentHashMap<String, ConcurrentLinkedQueue<Long>> changes = new ConcurrentHashMap<>();
+		final Semaphore semaphore = new Semaphore(-39);
+		
+		Z5AuthorizationDelegate delegate = new Z5AuthorizationDelegate() {
+			
+			@Override
+			public void onAuthTokenUpdated(AuthToken token) {
+				String[] sender = token.getToken().split(":");
+				changes.putIfAbsent(sender[0], new ConcurrentLinkedQueue<Long>());
+				changes.get(sender[0]).add(Long.decode(sender[1]));
+				System.out.println(sender[0] + ":" + sender[1]);
+				semaphore.release();
+			}
+		};
+		
+		final OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(null, "123", null, delegate);
+		
+		
+		class Run implements Callable<String> {
+			private final String name;
+			
+			Run(String name) {
+				this.name = name;
+			}
+			
+			@Override
+			public String call() {
+				for (int i = 0; i < 10; i++) {
+					OAuthToken token = new OAuthToken();
+					token.setToken(name + ":" + i);
+					interceptor.setToken(token);
+				}
+				return name;
+			}
+		}
+		
+		ExecutorService executor = Executors.newFixedThreadPool(5);
+		Set<Run> tasks = new HashSet<>();
+		tasks.add(new Run("a"));
+		tasks.add(new Run("b"));
+		tasks.add(new Run("c"));
+		tasks.add(new Run("d"));
+		
+		executor.invokeAll(tasks);
+		semaphore.acquire();
+		
+		
+		for (Run r: tasks) {
+			ConcurrentLinkedQueue<Long> list = changes.get(r.name);
+			Long previous = -1l;
+			for (Long l: list) {
+				System.out.println(r.name + ": " + l);
+				assertTrue(l > previous);
+				previous = l;
+			}
+		}
+	}
+	
 	@Test
 	public void testAdhocToken() {
+		login();
+		
 		// only applicable on SBC servers
 		if (isSpecialized()) {
 			Response<OAuthToken> response = authApi.adhocAccessToken("wahooride").blockingSingle();

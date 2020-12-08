@@ -19,6 +19,11 @@ public interface OAuthAPI {
 	@POST(Users.NEW_ACCESS_TOKEN)
 	Observable<Response<OAuthToken>> refreshAccessToken(@Field("client_id") String clientId, @Field("client_secret") String secret, @Field("username") String username, @Field("grant_type") GrantType type, @Field("refresh_token") String refreshToken);
   
+	/** Get a new auth token */
+	@FormUrlEncoded
+	@POST(Users.NEW_ACCESS_TOKEN)
+	Observable<Response<OAuthToken>> newAccessToken(@Field("client_id") String clientId, @Field("client_secret") String secret, @Field("username") String username, @Field("grant_type") GrantType type, @Field("password") String password);
+
 	/** Get a new adhoc auth token - this may be on behalf of another app */
 	@GET(Users.NEW_ADHOC_ACCESS_TOKEN)
 	Observable<Response<OAuthToken>> adhocAccessToken(@Path("clientId") String clientId);
