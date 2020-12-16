@@ -48,7 +48,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	private final Object fetchTokenLock = new Object();
 	// create a thread pool to handle delegate callbacks. It needs to be single threaded so that changes are reported sequentially in order.
 	private final ExecutorService delegateExecutor = Executors.newSingleThreadExecutor();
-	
+	private final String zone5BaseUrl;
 	
 	
 	/**
@@ -66,11 +66,12 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	 * @param clientSecret - Authentication service API secret, Cognito only. Set to null for Gigya keys.
 	 * @param delegates - delegates to receive callbacks whenever the token is updated.
 	 */
-	public OkHttpClientInterceptor_Authorization(AuthToken token, String clientID, String clientSecret, Z5AuthorizationDelegate ...delegates) {
+	public OkHttpClientInterceptor_Authorization(AuthToken token, String clientID, String clientSecret,String zone5BaseUrl, Z5AuthorizationDelegate ...delegates) {
 		this.token.set(token);
 		this.clientID = clientID;
 		this.clientSecret = clientSecret;
-		
+		this.zone5BaseUrl = zone5BaseUrl;
+
 		for (Z5AuthorizationDelegate delegate: delegates) {
 			this.delegates.add(delegate);
 		}
@@ -138,30 +139,33 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	public Response intercept(Chain chain) throws IOException {
 		Request originalRequest = chain.request();
 		String path = originalRequest.url().encodedPath();
+		String originalRequestUrl =  getBaseUrl(originalRequest.url());
 		Request.Builder builder = originalRequest.newBuilder();
 		
 		AuthToken token = this.token.get();
 		if (token != null && token.getBearer() != null && Endpoints.requiresAuth(path)) {
-			refreshIfRequired(chain, getBaseUrl(originalRequest.url()));
-			
+
+			refreshIfRequired(chain, originalRequestUrl);
+
 			// refetch token after potential refresh
 			token = this.token.get();
 			if (token != null && token.getBearer() != null) {
 				builder = builder.header(Z5HttpHeader.AUTHORIZATION.toString(), token.getBearer());
 			}
 		}
-		
-		// APIKey headers go on unauthenticated requests too
-		String clientID = this.clientID;
-		if (clientID != null) {
-			builder = builder.header(Z5HttpHeader.API_KEY.toString(), clientID);
+		// add the key and secret only if it is zone5 server url
+		if(originalRequestUrl.contains(zone5BaseUrl)) {
+			// APIKey headers go on unauthenticated requests too
+			String clientID = this.clientID;
+			if (clientID != null) {
+				builder = builder.header(Z5HttpHeader.API_KEY.toString(), clientID);
+			}
+
+			String clientSecret = this.clientSecret;
+			if (clientSecret != null) {
+				builder = builder.header(Z5HttpHeader.API_KEY_SECRET.toString(), clientSecret);
+			}
 		}
-		
-		String clientSecret = this.clientSecret;
-		if (clientSecret != null) {
-			builder = builder.header(Z5HttpHeader.API_KEY_SECRET.toString(), clientSecret);
-		}
-		
         Request newRequest = builder.build();
         Response response = chain.proceed(newRequest);
         
@@ -180,13 +184,16 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	/** 
 	 * If we have a refreshable token and it is expired or near expiry, do a token refresh 
 	 * @param chain - The intercepted chain
-	 * @param baseUrl - The base hose url from the request, used to issue the refresh request
+	 * @param originalRequestUrl - The base hose url from the request, used to issue the refresh request
 	 **/
-	private void refreshIfRequired(Chain chain, String baseUrl) {
+	//auto refresh needs to use this configured baseURL for constructing the auto refresh request,
+	// not the baseURL of the current incoming request.
+	private void refreshIfRequired(Chain chain, String originalRequestUrl) {
+		RequestBody body = null;
 		// check the token for expiry
 		// note that refresh itself does not require auth so will not end up cyclicly back here
 		AuthToken token = this.token.get();
-		if (token != null && token.getRefreshToken() != null && token.isExpired() && chain != null && baseUrl != null && !baseUrl.isEmpty()) {
+		if (token != null && token.getRefreshToken() != null && token.isExpired() && chain != null && originalRequestUrl != null && !originalRequestUrl.isEmpty()) {
 			// because requests can be concurrent, we need to synchronize so that we only do one refresh for an expired token
 			// and all of the requests dependent on that refresh are queued until the token is refreshed
 			synchronized(fetchTokenLock) {
@@ -195,33 +202,44 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 				token = this.token.get();
 				if (token != null && token.isExpired()) {
 					try {
-						if (token.getRefreshToken() != null) {
-							// do a Cognito refresh
-							String username = token.extractUsername();
-							if (username != null) {
-								RequestBody body = new FormBody.Builder().add("client_id", clientID)
-																		 .add("client_secret", clientSecret)
-																		 .add("grant_type", GrantType.REFRESH_TOKEN.toString())
-																		 .add("username", username)
-																		 .add("refresh_token", token.getRefreshToken()).build();
-								String url = baseUrl + Users.NEW_ACCESS_TOKEN;
-								Request authRequest = new Request.Builder().url(url).post(body).build();
+							if (token.getRefreshToken() != null) {
+								// do a Cognito refresh
+								String username = token.extractUsername();
+//
+								if (username != null) {
+									// Add Api-Key and Api-Key-Secret to body if the request url matches zone5BaseUrl
+									if(originalRequestUrl.contains(zone5BaseUrl)) {
+										body = new FormBody.Builder()
+												.add("client_id", clientID)
+												.add("client_secret", clientSecret)
+												.add("grant_type", GrantType.REFRESH_TOKEN.toString())
+												.add("username", username)
+												.add("refresh_token", token.getRefreshToken()).build();
+									}else {
+										 body = new FormBody.Builder()
+												.add("grant_type", GrantType.REFRESH_TOKEN.toString())
+												.add("username", username)
+												.add("refresh_token", token.getRefreshToken()).build();
+									}
+									// assign the new token to original request Url
+									String url = originalRequestUrl + Users.NEW_ACCESS_TOKEN;
+									Request authRequest = new Request.Builder().url(url).post(body).build();
+									Response response = chain.proceed(authRequest);
+									saveNewToken(Users.NEW_ACCESS_TOKEN, response);
+									response.close();
+								}
+							} else {
+								// do a Gigya refresh
+								// note: I put a check for getRefreshToken() into the entry if block
+								// which will exclude this case from being hit. If we want to support Gigya token refresh
+								// remove the getRefreshToken() != null check from the entry if statement at the start of this method
+//								String url = baseUrl + Users.REFRESH_TOKEN;
+								String url = originalRequestUrl + Users.REFRESH_TOKEN;
+								Request authRequest = new Request.Builder().url(url).header(Z5HttpHeader.AUTHORIZATION.toString(), token.getBearer()).get().build();
 								Response response = chain.proceed(authRequest);
-								saveNewToken(Users.NEW_ACCESS_TOKEN, response);
+								saveNewToken(Users.REFRESH_TOKEN, response);
 								response.close();
 							}
-						} else {
-							// do a Gigya refresh
-							// note: I put a check for getRefreshToken() into the entry if block
-							// which will exclude this case from being hit. If we want to support Gigya token refresh
-							// remove the getRefreshToken() != null check from the entry if statement at the start of this method
-							String url = baseUrl + Users.REFRESH_TOKEN;
-							Request authRequest = new Request.Builder().url(url).header(Z5HttpHeader.AUTHORIZATION.toString(), token.getBearer()).get().build();
-							Response response = chain.proceed(authRequest);
-							saveNewToken(Users.REFRESH_TOKEN, response);
-							response.close();
-						}
-						
 					} catch(Exception e) {
 						// could not refresh. Continue as normal and the caller should receive their own 401 response
 					}

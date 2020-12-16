@@ -45,7 +45,7 @@ public class BaseTestRetrofit extends BaseTest {
 	@Before
 	public void init() {
 		OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
-		auth = new OkHttpClientInterceptor_Authorization(authToken, clientID, clientSecret, delegate);
+		auth = new OkHttpClientInterceptor_Authorization(authToken, clientID, clientSecret, zone5BaseUrl,delegate);
 		OkHttpClientInterceptor_UserAgent agent = new OkHttpClientInterceptor_UserAgent("ride-iOS/3.6.4 (1)");
 		
         Gson gson = GsonManager.getInstance();

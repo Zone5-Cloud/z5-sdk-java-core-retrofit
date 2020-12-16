@@ -16,6 +16,7 @@ public abstract class BaseTest {
 	// This is your allocated clientId and secret - these can be set to null for S-Digital environments
     protected String clientID = ""; //"<your OAuth clientId issued by Zone5>";
     protected String clientSecret = "";  //"<your OAuth secret issued by Zone5>";
+	protected  String zone5BaseUrl = ""; //"<add zone5 base url>";
 	
     public BaseTest() {
     		// read config ~/tp.env or ~/z5.env
@@ -46,6 +47,9 @@ public abstract class BaseTest {
     						case "clientSecret":
     							clientSecret = value;
     							break;
+							case "zone5BaseUrl":
+								zone5BaseUrl = value;
+								break;
     						}
     					}
     				}

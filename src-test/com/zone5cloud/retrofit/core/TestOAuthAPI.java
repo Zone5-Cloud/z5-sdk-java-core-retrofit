@@ -1,5 +1,6 @@
 package com.zone5cloud.retrofit.core;
 
+import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -80,7 +81,7 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		setup();
 		
 		AuthToken currentToken = auth.getToken();
-		
+
 		// expire the token to force the refresh sequence
 		OAuthToken expiredToken = new OAuthToken();
 		expiredToken.setToken(currentToken.getToken());
@@ -93,7 +94,7 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		
 		// check token has been updated
 		AuthToken newToken = auth.getToken();
-		
+
 		if (authToken.getRefreshToken() != null) {
 			assertNotEquals(currentToken.getToken(), newToken.getToken());
 			assertEquals(currentToken.getRefreshToken(), newToken.getRefreshToken());
@@ -130,10 +131,10 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 			}
 		};
 		
-		OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(null, "123", null, delegate1, delegate2);
+		OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(null, "123", null, zone5BaseUrl,delegate1, delegate2);
 		
 		assertEquals(2, interceptor.delegates.size());
-		
+
 		interceptor.unsubscribe(delegate2);
 		
 		assertEquals(1, interceptor.delegates.size());
@@ -180,7 +181,7 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 			}
 		};
 		
-		final OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(null, "123", null, delegate);
+		final OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(null, "123", null, zone5BaseUrl,delegate);
 		
 		
 		class Run implements Callable<String> {
@@ -241,6 +242,60 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 			assertNotNull("Token should be valid", token.getToken());
 			assertNotNull("Token should have an expiry", token.getExpiresIn());
 			assertNotNull("Token should havea  scope", token.getScope());
+		}
+	}
+
+	@Test
+	public void testZone5Server_HasClientIdAndKey(){
+		Response<User> rsp = userApi.me().blockingFirst();
+		String clientId = rsp.raw().request().header("Api-Key");
+		String clientSecret = rsp.raw().request().header("Api-Key-Secret");
+
+		System.out.println("Client Id :"+clientId + "Client Secret : "+clientSecret);
+		assertNotNull(clientId);
+		assertNotNull(clientSecret);
+	}
+
+	@Test
+	public void testNonZone5Server_HasNoClientIdAndKey(){
+		Response<User> rsp = userApi.me().blockingFirst();
+		String clientId = rsp.raw().request().header("Api-Key");
+		String clientSecret = rsp.raw().request().header("Api-Key-Secret");
+
+		System.out.println("Client Id :"+clientId + "Client Secret : "+clientSecret);
+		assertNull(clientId);
+		assertNull(clientSecret);
+	}
+
+	@Test
+	public void testZone5Server_HasClientIdAndKey_WhenTokenRefreshed(){
+		login();
+		if(isSpecialized()) {
+			Response<OAuthToken> response = authApi.adhocAccessToken("wahooride").blockingSingle();
+			OAuthToken token = response.body();
+			assertNotNull(token);
+			String clientId = response.raw().request().header("Api-Key");
+			String clientSecret = response.raw().request().header("Api-Key-Secret");
+
+			System.out.println("Client Id :" + clientId + "Client Secret : " + clientSecret);
+			assertNotNull(clientId);
+			assertNotNull(clientSecret);
+		}
+	}
+
+	@Test
+	public void testNonZone5Server_HasNoClientIdAndKey_WhenTokenRefreshed(){
+		login();
+		if(isSpecialized()) {
+			Response<OAuthToken> rsp = authApi.adhocAccessToken("wahooride").blockingSingle();
+			OAuthToken token = rsp.body();
+			assertNotNull(token);
+			String clientId = rsp.raw().request().header("Api-Key");
+			String clientSecret = rsp.raw().request().header("Api-Key-Secret");
+
+			System.out.println("Client Id :" + clientId + "Client Secret : " + clientSecret);
+			assertNull(clientId);
+			assertNull(clientSecret);
 		}
 	}
 }
