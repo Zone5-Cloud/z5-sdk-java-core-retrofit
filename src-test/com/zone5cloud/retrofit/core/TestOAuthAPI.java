@@ -49,15 +49,15 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		setup();
 		
 		// Exercise the refresh access token
-		if (isSpecialized() && authToken.getRefreshToken() == null) {
+		if (isSpecialized() && clientConfig.getToken().getRefreshToken() == null) {
 			// gigya
 			OAuthToken alt = userApi.refreshToken().blockingFirst().body();
 			assertNotNull(alt.getToken());
 			assertNotNull(alt.getTokenExp());
 			assertTrue(alt.getTokenExp() > System.currentTimeMillis() + 30000);
-		} else if (authToken.getRefreshToken() != null){
+		} else if (clientConfig.getToken().getRefreshToken() != null){
 			// cognito
-			Response<OAuthToken> response = authApi.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, authToken.getRefreshToken()).blockingFirst();
+			Response<OAuthToken> response = authApi.refreshAccessToken(clientConfig.getClientID(), clientConfig.getClientSecret(), email, GrantType.REFRESH_TOKEN, clientConfig.getToken().getRefreshToken()).blockingFirst();
 			OAuthToken tok = response.body();
 			assertNotNull(tok.getToken());
 			assertNotNull(tok.getTokenExp());
@@ -65,7 +65,7 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 			assertTrue(tok.getTokenExp() > System.currentTimeMillis() + 30000);
 		} else {
 			// legacy tp token with no refresh
-			Response<OAuthToken> response = authApi.newAccessToken(clientID, clientSecret, email, GrantType.USERNAME_PASSWORD, TEST_PASSWORD).blockingFirst();
+			Response<OAuthToken> response = authApi.newAccessToken(clientConfig.getClientID(), clientConfig.getClientSecret(), email, GrantType.USERNAME_PASSWORD, TEST_PASSWORD).blockingFirst();
 			OAuthToken tok = response.body();
 			assertNotNull(tok.getToken());
 			assertNotNull(tok.getTokenExp());
@@ -95,7 +95,7 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		// check token has been updated
 		AuthToken newToken = auth.getToken();
 
-		if (authToken.getRefreshToken() != null) {
+		if (clientConfig.getToken().getRefreshToken() != null) {
 			assertNotEquals(currentToken.getToken(), newToken.getToken());
 			assertEquals(currentToken.getRefreshToken(), newToken.getRefreshToken());
 			assertTrue(newToken.getTokenExp() > System.currentTimeMillis() + 30000);
@@ -130,8 +130,10 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 				s2.release();
 			}
 		};
-		
-		OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(null, "123", null, zone5BaseUrl,delegate1, delegate2);
+		clientConfig.setUserName(null);
+		clientConfig.setClientSecret("123");
+		clientConfig.setClientID(null);
+		OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(clientConfig, zone5BaseUrl,delegate1, delegate2);
 		
 		assertEquals(2, interceptor.delegates.size());
 
@@ -180,8 +182,8 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 				semaphore.release();
 			}
 		};
-		
-		final OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(null, "123", null, zone5BaseUrl,delegate);
+
+		final OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(clientConfig, zone5BaseUrl,delegate);
 		
 		
 		class Run implements Callable<String> {
@@ -247,7 +249,13 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 
 	@Test
 	public void testZone5Server_HasClientIdAndKey(){
-		Response<User> rsp = userApi.me().blockingFirst();
+		BaseTestRetrofit retrofit = new BaseTestRetrofit();
+		retrofit.zone5BaseUrl = "staging.todaysplan.com";
+		retrofit.server="staging.todaysplan.com.au";
+		retrofit.clientConfig.setClientID("3ts74n430pvqkbfbtb7l9qb17d");
+		retrofit.clientConfig.setClientSecret("q7vcdfc578ebln9gbasu00n8n09ca47lk7abm43nfma52jp9a5t");
+		retrofit.init();
+		Response<User> rsp = retrofit.userApi.me().blockingFirst();
 		String clientId = rsp.raw().request().header("Api-Key");
 		String clientSecret = rsp.raw().request().header("Api-Key-Secret");
 
@@ -258,7 +266,15 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 
 	@Test
 	public void testNonZone5Server_HasNoClientIdAndKey(){
-		Response<User> rsp = userApi.me().blockingFirst();
+		BaseTestRetrofit retrofit = new BaseTestRetrofit();
+		retrofit.zone5BaseUrl = "http://someotherurl.com/";
+		retrofit.server="staging.todaysplan.com.au";
+		retrofit.clientConfig.setClientID("3ts74n430pvqkbfbtb7l9qb17d");
+		retrofit.clientConfig.setClientSecret("q7vcdfc578ebln9gbasu00n8n09ca47lk7abm43nfma52jp9a5t");
+		retrofit.init();
+
+
+		Response<User> rsp = retrofit.userApi.me().blockingFirst();
 		String clientId = rsp.raw().request().header("Api-Key");
 		String clientSecret = rsp.raw().request().header("Api-Key-Secret");
 
@@ -267,35 +283,6 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		assertNull(clientSecret);
 	}
 
-	@Test
-	public void testZone5Server_HasClientIdAndKey_WhenTokenRefreshed(){
-		login();
-		if(isSpecialized()) {
-			Response<OAuthToken> response = authApi.adhocAccessToken("wahooride").blockingSingle();
-			OAuthToken token = response.body();
-			assertNotNull(token);
-			String clientId = response.raw().request().header("Api-Key");
-			String clientSecret = response.raw().request().header("Api-Key-Secret");
 
-			System.out.println("Client Id :" + clientId + "Client Secret : " + clientSecret);
-			assertNotNull(clientId);
-			assertNotNull(clientSecret);
-		}
-	}
 
-	@Test
-	public void testNonZone5Server_HasNoClientIdAndKey_WhenTokenRefreshed(){
-		login();
-		if(isSpecialized()) {
-			Response<OAuthToken> rsp = authApi.adhocAccessToken("wahooride").blockingSingle();
-			OAuthToken token = rsp.body();
-			assertNotNull(token);
-			String clientId = rsp.raw().request().header("Api-Key");
-			String clientSecret = rsp.raw().request().header("Api-Key-Secret");
-
-			System.out.println("Client Id :" + clientId + "Client Secret : " + clientSecret);
-			assertNull(clientId);
-			assertNull(clientSecret);
-		}
-	}
 }

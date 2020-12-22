@@ -31,7 +31,6 @@ public class BaseTestRetrofit extends BaseTest {
 	protected ThirdPartyTokenAPI thirdPartyApi = null;
 	protected OAuthAPI authApi = null;
 	protected UserAgentAPI agentApi = null;
-	
 	protected OkHttpClientInterceptor_Authorization auth = null;
 	
 	protected AuthToken authToken = null;
@@ -39,13 +38,14 @@ public class BaseTestRetrofit extends BaseTest {
 		@Override
 		public void onAuthTokenUpdated(AuthToken token) {
 			authToken = token;
+			clientConfig.setToken(authToken);
 		}
 	};
 	
 	@Before
 	public void init() {
 		OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
-		auth = new OkHttpClientInterceptor_Authorization(authToken, clientID, clientSecret, zone5BaseUrl,delegate);
+		auth = new OkHttpClientInterceptor_Authorization(clientConfig, zone5BaseUrl,delegate);
 		OkHttpClientInterceptor_UserAgent agent = new OkHttpClientInterceptor_UserAgent("ride-iOS/3.6.4 (1)");
 		
         Gson gson = GsonManager.getInstance();
@@ -70,7 +70,7 @@ public class BaseTestRetrofit extends BaseTest {
 	}
 	
 	protected LoginResponse login() {
-		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL, TEST_PASSWORD, clientID, clientSecret)).blockingFirst();
+		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL,TEST_PASSWORD, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst();
 		assertTrue("Failed to login - please check configuration in BaseTest.java", response.isSuccessful());
 		return response.body();
 	}
