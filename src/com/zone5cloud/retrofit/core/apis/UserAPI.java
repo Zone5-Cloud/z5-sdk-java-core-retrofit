@@ -72,4 +72,12 @@ public interface UserAPI {
     /** Refresh a bearer token - get a new token if the current one is nearing expiry */
     @GET(Users.REFRESH_TOKEN)
     Observable<Response<OAuthToken>> refreshToken();
+
+    /** Returns password complexity */
+    @GET(Users.PASSWORD_COMPLEXITY)
+    Observable<Response<String>> passwordComplexity();
+
+    /** Resend email */
+    @GET(Users.RECONFIRM)
+    Observable<Response<Void>> reconfirm(@Query("email") String email);
 }

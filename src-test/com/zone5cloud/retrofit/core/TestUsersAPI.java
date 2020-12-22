@@ -5,9 +5,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.zone5cloud.retrofit.core.apis.UserAPI;
 import org.junit.Test;
 
 import com.zone5cloud.core.enums.GrantType;
@@ -66,13 +70,13 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertEquals(email, user.getEmail());
 		
 		// Note - in S-Digital, the user will need to validate their email before they can login...
-		if (isSpecialized() && clientID == null) {
+		if (isSpecialized() && clientConfig.getClientID() == null) {
 			System.out.println("Waiting for confirmation that you have verified your email address ... press Enter when done");
 			System.in.read();
 		}
 		
 		// Login and set our bearer token
-		LoginRequest login = new LoginRequest(email, password, clientID, clientSecret);
+		LoginRequest login = new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret());
 		System.out.println(GsonManager.getInstance(true).toJson(login));
 		
 		assertNull(authToken);
@@ -99,7 +103,8 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertTrue(userApi.resetPassword(email).blockingFirst().body());
 		
 		// Log back in
-		r = userApi.login(new LoginRequest(email, password, clientID, clientSecret)).blockingFirst().body();
+		clientConfig.setUserName(email);
+		r = userApi.login(new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().body();
 		assertNotNull(r.getToken());
 		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
 		
@@ -111,7 +116,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertEquals(200, userApi.changePasswordSpecialized(new NewPassword(password, "myNewPassword123!!")).blockingFirst().code());
 		assertTrue(userApi.logout().blockingFirst().body());
 		
-		r = userApi.login(new LoginRequest(email, "myNewPassword123!!", clientID, clientSecret)).blockingFirst().body();
+		r = userApi.login(new LoginRequest(email, "myNewPassword123!!", clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().body();
 		assertNotNull(r.getToken());
 		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
 		
@@ -124,7 +129,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 			assertTrue(alt.getTokenExp() > System.currentTimeMillis() + 30000);
 		} else if (r.getRefresh() != null){
 			// cognito token
-			Response<OAuthToken> response = authApi.refreshAccessToken(clientID, clientSecret, email, GrantType.REFRESH_TOKEN, r.getRefresh()).blockingFirst();
+			Response<OAuthToken> response = authApi.refreshAccessToken(clientConfig.getClientID(), clientConfig.getClientSecret(), email, GrantType.REFRESH_TOKEN, r.getRefresh()).blockingFirst();
 			OAuthToken tok = response.body();
 			assertNotNull(tok.getToken());
 			assertNotNull(tok.getTokenExp());
@@ -140,7 +145,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 			// We are no longer valid!
 			assertEquals(401, userApi.me().blockingFirst().code());
 			
-			assertEquals(401, userApi.login(new LoginRequest(email, password, clientID, clientSecret)).blockingFirst().code());
+			assertEquals(401, userApi.login(new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().code());
 		}
 	}
 		
@@ -173,5 +178,30 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		p.setMetric(UnitMeasurement.metric);
 		assertTrue(userApi.setPreferences(p).blockingFirst().body());
 		assertEquals(UnitMeasurement.metric, userApi.getPreferences(userId).blockingFirst().body().getMetric());
+	}
+
+	@Test
+	public void testPasswordComplexity(){
+		UserAPI userApiMock = mock(UserAPI.class);
+		String regex = "^(?=.*[\\d])(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$";
+
+//		when(authApiMock.passwordComplexity()).thenReturn(new );
+		Pattern pattern = Pattern.compile(regex);
+		try {
+			Matcher matcher = pattern.matcher(TEST_PASSWORD);
+			if (matcher.matches()) {
+				System.out.println(" match found " + matcher.group());
+				assertTrue(matcher.matches());
+			}else {
+				System.out.println(" does not match " + matcher.matches());
+			}
+		}catch (Exception ex){
+			ex.printStackTrace();
+		}
+	}
+
+	private Response<String> createResponse(){
+		Response<String> passwordComplexityResponse = Response.success("");
+		return passwordComplexityResponse;
 	}
 }

@@ -5,23 +5,22 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import com.zone5cloud.core.ClientConfig;
 import org.junit.Test;
 
-import com.zone5cloud.core.Types;
 import com.zone5cloud.core.Z5Error;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
-import com.zone5cloud.core.utils.GsonManager;
 import com.zone5cloud.retrofit.core.BaseTestRetrofit;
 
 import retrofit2.Response;
 
 public class TestUtilities extends BaseTestRetrofit {
-
+	private ClientConfig clientConfig = new ClientConfig();
 	@Test
 	public void testErrors() throws Exception {
 		auth.setClientIDAndSecret("bogus clientid", "bogus email");
-		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL, TEST_PASSWORD, "bogus clientid", "bogus secret")).blockingSingle();
+		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL,TEST_PASSWORD, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingSingle();
 		
 		assertFalse(response.isSuccessful());
 		assertEquals(401, response.code());
