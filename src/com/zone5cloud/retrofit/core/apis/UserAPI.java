@@ -77,7 +77,7 @@ public interface UserAPI {
     @GET(Users.PASSWORD_COMPLEXITY)
     Observable<Response<String>> passwordComplexity();
 
-    /** Resend email */
+    /** Reconfirm email */
     @GET(Users.RECONFIRM)
     Observable<Response<Void>> reconfirm(@Query("email") String email);
 }

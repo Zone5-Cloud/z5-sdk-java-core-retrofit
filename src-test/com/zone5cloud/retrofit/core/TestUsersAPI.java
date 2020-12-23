@@ -6,12 +6,21 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sun.deploy.util.ReflectionUtil;
+import com.sun.xml.internal.ws.client.sei.ResponseBuilder;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
+import okhttp3.MediaType;
+import okhttp3.ResponseBody;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.zone5cloud.core.enums.GrantType;
@@ -25,10 +34,13 @@ import com.zone5cloud.core.users.User;
 import com.zone5cloud.core.users.UserPreferences;
 import com.zone5cloud.core.utils.GsonManager;
 
+import org.mockito.Answers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import retrofit2.Response;
 
 public class TestUsersAPI extends BaseTestRetrofit {
-		
 	@Test
 	public void getEmailStatus() throws Exception {
 		Response<Boolean> responseExists = userApi.isEmailRegistered(TEST_EMAIL).blockingFirst();
@@ -185,23 +197,19 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		UserAPI userApiMock = mock(UserAPI.class);
 		String regex = "^(?=.*[\\d])(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$";
 
-//		when(authApiMock.passwordComplexity()).thenReturn(new );
+		when(userApiMock.passwordComplexity()).thenReturn(Observable.<Response<String>>just(
+				Response.success(regex)));
+		Observable<Response<String>> response  = userApiMock.passwordComplexity();
 		Pattern pattern = Pattern.compile(regex);
 		try {
 			Matcher matcher = pattern.matcher(TEST_PASSWORD);
-			if (matcher.matches()) {
-				System.out.println(" match found " + matcher.group());
-				assertTrue(matcher.matches());
+			if (!matcher.matches()) {
+				assertEquals(regex,response.blockingFirst().body());
 			}else {
-				System.out.println(" does not match " + matcher.matches());
+				System.out.println(" does not match regex "+regex);
 			}
 		}catch (Exception ex){
 			ex.printStackTrace();
 		}
-	}
-
-	private Response<String> createResponse(){
-		Response<String> passwordComplexityResponse = Response.success("");
-		return passwordComplexityResponse;
 	}
 }
