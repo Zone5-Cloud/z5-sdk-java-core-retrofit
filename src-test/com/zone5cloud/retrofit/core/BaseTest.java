@@ -1,9 +1,11 @@
 package com.zone5cloud.retrofit.core;
 
 import java.io.File;
+import java.net.URL;
 
 import com.zone5cloud.core.ClientConfig;
 import org.apache.commons.io.FileUtils;
+import retrofit2.http.Url;
 
 public abstract class BaseTest {
 	
@@ -15,7 +17,6 @@ public abstract class BaseTest {
 	/* SET YOUR SERVER ENDPOINT HERE */
 	protected String server = "";
 	// This is your allocated clientId and secret - these can be set to null for S-Digital environments
-	protected  String zone5BaseUrl = ""; //"<add zone5 base url>";
 	protected ClientConfig clientConfig = new ClientConfig();
 
     public BaseTest() {
@@ -49,7 +50,7 @@ public abstract class BaseTest {
     							clientConfig.setClientSecret(value);
     							break;
 							case "zone5BaseUrl":
-								zone5BaseUrl = value;
+								clientConfig.setZone5BaseUrl(new URL(value));
 								break;
     						}
     					}

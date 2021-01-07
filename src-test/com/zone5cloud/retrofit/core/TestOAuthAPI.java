@@ -255,7 +255,7 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 	public void testZone5Server_HasClientIdAndKey(){
 		BaseTestRetrofit retrofit = new BaseTestRetrofit();
 		try {
-			retrofit.zone5BaseUrl = new URL("http://staging.todaysplan.com");
+			retrofit.clientConfig.setZone5BaseUrl(new URL("http://staging.todaysplan.com"));
 		}catch (MalformedURLException MUex){
 			System.out.println(" Malformed URL EXCEPTION"+MUex);
 		}
@@ -276,7 +276,7 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 	public void testNonZone5Server_HasNoClientIdAndKey(){
 		BaseTestRetrofit retrofit = new BaseTestRetrofit();
 		try {
-			retrofit.zone5BaseUrl = new URL("http://someotherurl.com/");
+			retrofit.clientConfig.setZone5BaseUrl(new URL("http://someotherurl.com/"));
 		}catch (MalformedURLException MUex){
 			System.out.println("Malformed Url Exception"+MUex);
 		}
