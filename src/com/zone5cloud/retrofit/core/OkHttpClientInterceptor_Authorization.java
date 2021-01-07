@@ -45,7 +45,11 @@ import retrofit2.http.Url;
  */
 public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	private final AtomicReference<AuthToken> token = new AtomicReference<>(null);
-	private ClientConfig clientConfig = new ClientConfig();
+	private String clientID;
+	private String clientSecret;
+	private String userName;
+	private final URL zone5BaseUrl;
+
 	protected final Set<Z5AuthorizationDelegate> delegates = new HashSet<>();
 	private final Object setTokenLock = new Object();
 	private final Object fetchTokenLock = new Object();
@@ -65,20 +69,20 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	 * @param delegates - delegates to receive callbacks whenever the token is updated.
 	 */
 	public OkHttpClientInterceptor_Authorization(ClientConfig clientConfig, Z5AuthorizationDelegate ...delegates) {
-		this.clientConfig.setToken(clientConfig.getToken());
-		this.clientConfig.setClientID(clientConfig.getClientID());
-		this.clientConfig.setClientSecret(clientConfig.getClientSecret());
-		this.clientConfig.setZone5BaseUrl(clientConfig.getZone5BaseUrl());
+		this.token.set(clientConfig.getToken());
+		this.clientID = clientConfig.getClientID();
+		this.clientSecret = clientConfig.getClientSecret();
+		this.zone5BaseUrl = clientConfig.getZone5BaseUrl();
 
 		for (Z5AuthorizationDelegate delegate: delegates) {
 			this.delegates.add(delegate);
 		}
 	}
-	
+
 	/** Set the Authentication service API key and secret. Set clientSecret to null for Gigya keys */
 	public void setClientIDAndSecret(String clientID, String clientSecret) {
-		this.clientConfig.setClientSecret(clientID);
-		this.clientConfig.setClientSecret(clientSecret);
+		this.clientSecret = clientID;
+		this.clientSecret = clientSecret;
 	}
 	
 	/** Set the Auth token */
@@ -88,7 +92,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		// The synchronized ensures that token changes are reported on the delegate serially and in order.
 		synchronized(setTokenLock) {
 			AuthToken previousValue = this.token.getAndSet(token);
-			clientConfig.setToken(previousValue);
+//			clientConfig.setToken(previousValue);
 			// only call delegates if the value has changed
 			if ((token == null && previousValue != null) || (token != null && !token.equals(previousValue))) {
 				// this only schedules the execution. This call returns immediately and exits the lock. 
@@ -101,18 +105,18 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 						}
 					}
 				});
-				clientConfig.setToken(token);
+//				clientConfig.setToken(token);
 			}
 		}
 	}
 
 	public void setUserName(String userName){
-		this.clientConfig.setUserName(userName);
+		this.userName = userName;
 	}
 	
 	/** Get the Auth token */
 	public AuthToken getToken() {
-		return this.clientConfig.getToken();
+		return this.token.get();
 	}
 	
 	public void subscribe(Z5AuthorizationDelegate delegate) {
@@ -145,27 +149,27 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		String originalRequestUrl =  getBaseUrl(originalRequest.url());
 		Request.Builder builder = originalRequest.newBuilder();
 		
-		AuthToken token = this.clientConfig.getToken();
+		AuthToken token = this.token.get();
 		if (token != null && token.getBearer() != null && Endpoints.requiresAuth(path)) {
 
-			refreshIfRequired(chain, clientConfig.getZone5BaseUrl());
+			refreshIfRequired(chain, this.zone5BaseUrl);
 
 			// refetch token after potential refresh
-			token = this.clientConfig.getToken();
+			token = this.token.get();
 			if (token != null && token.getBearer() != null) {
 				builder = builder.header(Z5HttpHeader.AUTHORIZATION.toString(), token.getBearer());
 			}
 		}
 		// add the key and secret only if it is zone5 server url
-		if(clientConfig.getZone5BaseUrl()!= null && originalRequestUrl.contains(
-				clientConfig.getZone5BaseUrl().toString())) {
+		if(this.zone5BaseUrl != null && originalRequestUrl.contains(
+				this.zone5BaseUrl.toString())) {
 			// APIKey headers go on unauthenticated requests too
-			String clientID = this.clientConfig.getClientID();
+			String clientID = this.clientID;
 			if (clientID != null) {
 				builder = builder.header(Z5HttpHeader.API_KEY.toString(), clientID);
 			}
 
-			String clientSecret = this.clientConfig.getClientSecret();
+			String clientSecret = this.clientSecret;
 			if (clientSecret != null) {
 				builder = builder.header(Z5HttpHeader.API_KEY_SECRET.toString(), clientSecret);
 			}
@@ -196,14 +200,14 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		RequestBody body = null;
 		// check the token for expiry
 		// note that refresh itself does not require auth so will not end up cyclically back here
-		AuthToken token = this.clientConfig.getToken();
+		AuthToken token = this.token.get();
 		if (token != null && token.getRefreshToken() != null && token.isExpired() && chain != null && zone5Url != null ) {
 			// because requests can be concurrent, we need to synchronize so that we only do one refresh for an expired token
 			// and all of the requests dependent on that refresh are queued until the token is refreshed
 			synchronized(fetchTokenLock) {
 				// once we are inside the mutex block we need to re-test our token because it might have
 				// been refreshed while we were waiting
-				token = this.clientConfig.getToken();
+				token = this.token.get();
 				if (token != null && token.isExpired()) {
 					try {
 							if (token.getRefreshToken() != null) {
@@ -213,8 +217,8 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 								if (username != null) {
 									// Add Api-Key and Api-Key-Secret to body if the request url matches zone5BaseUrl
 										body = new FormBody.Builder()
-											.add("client_id", clientConfig.getClientID())
-											.add("client_secret", clientConfig.getClientSecret())
+											.add("client_id", this.clientID)
+											.add("client_secret", this.clientSecret)
 											.add("grant_type", GrantType.REFRESH_TOKEN.toString())
 											.add("username", username)
 											.add("refresh_token", token.getRefreshToken()).build();
