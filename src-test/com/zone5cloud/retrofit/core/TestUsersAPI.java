@@ -91,13 +91,13 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		LoginRequest login = new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret());
 		System.out.println(GsonManager.getInstance(true).toJson(login));
 		
-		assertNull(authToken);
+		assertNull(clientConfig.getToken());
 		Response<LoginResponse> responseAuth = userApi.login(login).blockingFirst();
 		assertTrue(responseAuth.isSuccessful());
 		LoginResponse r = responseAuth.body();
 		assertNotNull(r.getToken());
 		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
-		assertNotNull(authToken);
+		assertNotNull(clientConfig.getToken());
 		
 		// Try it out!
 		User me = userApi.me().blockingFirst().body();
@@ -105,9 +105,9 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		
 		// check that this user is now considered registered
 		assertTrue(userApi.isEmailRegistered(email).blockingFirst().body());
-		assertNotNull(authToken);
+		assertNotNull(clientConfig.getToken());
 		assertTrue(userApi.logout().blockingFirst().body());
-		assertNull(authToken);
+		assertNull(clientConfig.getToken());
 		
 		assertTrue(userApi.isEmailRegistered(email).blockingFirst().body());
 		
@@ -123,10 +123,12 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertEquals(Locale.getDefault().toString(), r.getUser().getLocale());
 		me = userApi.me().blockingFirst().body();
 		assertEquals(me.getId(), user.getId());
-		
+
 		// Change my password and try it out
 		assertEquals(200, userApi.changePasswordSpecialized(new NewPassword(password, "myNewPassword123!!")).blockingFirst().code());
 		assertTrue(userApi.logout().blockingFirst().body());
+
+
 		
 		r = userApi.login(new LoginRequest(email, "myNewPassword123!!", clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().body();
 		assertNotNull(r.getToken());
@@ -194,22 +196,20 @@ public class TestUsersAPI extends BaseTestRetrofit {
 
 	@Test
 	public void testPasswordComplexity(){
-		UserAPI userApiMock = mock(UserAPI.class);
-		String regex = "^(?=.*[\\d])(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$";
-
-		when(userApiMock.passwordComplexity()).thenReturn(Observable.<Response<String>>just(
-				Response.success(regex)));
-		Observable<Response<String>> response  = userApiMock.passwordComplexity();
-		Pattern pattern = Pattern.compile(regex);
-		try {
-			Matcher matcher = pattern.matcher(TEST_PASSWORD);
-			if (!matcher.matches()) {
-				assertEquals(regex,response.blockingFirst().body());
-			}else {
-				System.out.println(" does not match regex "+regex);
-			}
-		}catch (Exception ex){
-			ex.printStackTrace();
-		}
+		String passwordFormat = "^(?=.[\\d])(?=.[a-z])(?=.[A-Z])(?=.[a-zA-Z]).{8,}$";
+		UserAPI userAPI = mock(UserAPI.class);
+		when(userAPI.passwordComplexity()).thenReturn(Observable.just(Response.success(passwordFormat)));
+		Response<String> response = userAPI.passwordComplexity().blockingFirst();
+		assertEquals(response.body(),passwordFormat);
 	}
+
+	@Test
+	public void testReconfirmEmail(){
+		String email = "sometest@email.com";
+		UserAPI userAPI = mock(UserAPI.class);
+		when(userAPI.reconfirm(email)).thenReturn(Observable.just(Response.success(200,null)));
+		Response<Void> response =  userAPI.reconfirm(email).blockingFirst();
+		assertEquals(200,response.code());
+	}
+
 }

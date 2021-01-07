@@ -20,7 +20,8 @@ public class TestUtilities extends BaseTestRetrofit {
 	@Test
 	public void testErrors() throws Exception {
 		auth.setClientIDAndSecret("bogus clientid", "bogus email");
-		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL,TEST_PASSWORD, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingSingle();
+		Response<LoginResponse> response = userApi.login(new LoginRequest
+				(TEST_EMAIL, TEST_PASSWORD, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingSingle();
 		
 		assertFalse(response.isSuccessful());
 		assertEquals(401, response.code());

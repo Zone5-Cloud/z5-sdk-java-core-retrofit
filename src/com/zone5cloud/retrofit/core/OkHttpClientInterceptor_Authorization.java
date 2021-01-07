@@ -1,6 +1,7 @@
 package com.zone5cloud.retrofit.core;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -16,6 +17,7 @@ import com.zone5cloud.core.enums.Z5HttpHeader;
 import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.users.LoginResponse;
+import com.zone5cloud.core.users.User;
 import com.zone5cloud.core.users.Users;
 import com.zone5cloud.core.utils.GsonManager;
 
@@ -27,6 +29,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import retrofit2.http.Url;
 
 /**
  * OKHttp Interceptor which:
@@ -48,9 +51,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	private final Object fetchTokenLock = new Object();
 	// create a thread pool to handle delegate callbacks. It needs to be single threaded so that changes are reported sequentially in order.
 	private final ExecutorService delegateExecutor = Executors.newSingleThreadExecutor();
-	private final String zone5BaseUrl;
-	
-	
+
 	/**
 	 * OKHttp Interceptor which:
 	 *  * Does a refresh if the authorization token is expired or nearing expiry
@@ -63,11 +64,11 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	 * @param clientConfig (gets and sets token, client key , secret and username
 	 * @param delegates - delegates to receive callbacks whenever the token is updated.
 	 */
-	public OkHttpClientInterceptor_Authorization(ClientConfig clientConfig, String zone5BaseUrl, Z5AuthorizationDelegate ...delegates) {
+	public OkHttpClientInterceptor_Authorization(ClientConfig clientConfig, Z5AuthorizationDelegate ...delegates) {
 		this.clientConfig.setToken(clientConfig.getToken());
 		this.clientConfig.setClientID(clientConfig.getClientID());
 		this.clientConfig.setClientSecret(clientConfig.getClientSecret());
-		this.zone5BaseUrl = zone5BaseUrl;
+		this.clientConfig.setZone5BaseUrl(clientConfig.getZone5BaseUrl());
 
 		for (Z5AuthorizationDelegate delegate: delegates) {
 			this.delegates.add(delegate);
@@ -147,7 +148,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		AuthToken token = this.clientConfig.getToken();
 		if (token != null && token.getBearer() != null && Endpoints.requiresAuth(path)) {
 
-			refreshIfRequired(chain, zone5BaseUrl);
+			refreshIfRequired(chain, clientConfig.getZone5BaseUrl());
 
 			// refetch token after potential refresh
 			token = this.clientConfig.getToken();
@@ -156,7 +157,8 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 			}
 		}
 		// add the key and secret only if it is zone5 server url
-		if(originalRequestUrl.contains(zone5BaseUrl)) {
+		if(clientConfig.getZone5BaseUrl()!= null && originalRequestUrl.contains(
+				clientConfig.getZone5BaseUrl().toString())) {
 			// APIKey headers go on unauthenticated requests too
 			String clientID = this.clientConfig.getClientID();
 			if (clientID != null) {
@@ -190,12 +192,12 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	 **/
 	//auto refresh needs to use this configured baseURL for constructing the auto refresh request,
 	// not the baseURL of the current incoming request.
-	private void refreshIfRequired(Chain chain, String zone5Url) {
+	private void refreshIfRequired(Chain chain, URL zone5Url) {
 		RequestBody body = null;
 		// check the token for expiry
-		// note that refresh itself does not require auth so will not end up cyclicly back here
+		// note that refresh itself does not require auth so will not end up cyclically back here
 		AuthToken token = this.clientConfig.getToken();
-		if (token != null && token.getRefreshToken() != null && token.isExpired() && chain != null && zone5Url != null && !zone5Url.isEmpty()) {
+		if (token != null && token.getRefreshToken() != null && token.isExpired() && chain != null && zone5Url != null ) {
 			// because requests can be concurrent, we need to synchronize so that we only do one refresh for an expired token
 			// and all of the requests dependent on that refresh are queued until the token is refreshed
 			synchronized(fetchTokenLock) {
@@ -263,7 +265,10 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		        				login.setTokenExp(System.currentTimeMillis() + (login.getExpiresIn() * 1000));
 		        			}
 		        			setToken(new OAuthToken(login));
-							setUserName(login.getUser().getEmail());
+
+		        			if(login.getUser() != null && login.getUser().getEmail() != null){
+								setUserName(login.getUser().getEmail());
+							}
 		        			body = GsonManager.getInstance().toJson(login, Types.LOGIN_RESPONSE);
 		        		}
 		        		return body;
