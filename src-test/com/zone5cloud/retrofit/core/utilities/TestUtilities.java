@@ -3,9 +3,7 @@ package com.zone5cloud.retrofit.core.utilities;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
-import com.zone5cloud.core.ClientConfig;
 import org.junit.Test;
 
 import com.zone5cloud.core.Z5Error;
@@ -16,7 +14,6 @@ import com.zone5cloud.retrofit.core.BaseTestRetrofit;
 import retrofit2.Response;
 
 public class TestUtilities extends BaseTestRetrofit {
-	private ClientConfig clientConfig = new ClientConfig();
 	@Test
 	public void testErrors() throws Exception {
 		auth.setClientIDAndSecret("bogus clientid", "bogus email");
@@ -40,5 +37,4 @@ public class TestUtilities extends BaseTestRetrofit {
 		assertEquals("INVALID_CLIENT_ID_OR_SECRET", error.getErrorItem(0).getMessage());
 		
 	}
-
 }

@@ -92,7 +92,6 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		// The synchronized ensures that token changes are reported on the delegate serially and in order.
 		synchronized(setTokenLock) {
 			AuthToken previousValue = this.token.getAndSet(token);
-//			clientConfig.setToken(previousValue);
 			// only call delegates if the value has changed
 			if ((token == null && previousValue != null) || (token != null && !token.equals(previousValue))) {
 				// this only schedules the execution. This call returns immediately and exits the lock. 

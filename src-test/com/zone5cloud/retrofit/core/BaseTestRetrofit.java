@@ -33,11 +33,9 @@ public class BaseTestRetrofit extends BaseTest {
 	protected UserAgentAPI agentApi = null;
 	protected OkHttpClientInterceptor_Authorization auth = null;
 	
-//	protected AuthToken authToken = null;
 	protected Z5AuthorizationDelegate delegate = new Z5AuthorizationDelegate() {
 		@Override
 		public void onAuthTokenUpdated(AuthToken token) {
-//			authToken = token;
 			clientConfig.setToken(token);
 		}
 	};
