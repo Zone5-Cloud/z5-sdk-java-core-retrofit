@@ -73,7 +73,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		this.clientID = clientConfig.getClientID();
 		this.clientSecret = clientConfig.getClientSecret();
 		this.zone5BaseUrl = clientConfig.getZone5BaseUrl();
-
+		this.userName = clientConfig.getUserName();
 		for (Z5AuthorizationDelegate delegate: delegates) {
 			this.delegates.add(delegate);
 		}
@@ -81,7 +81,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 
 	/** Set the Authentication service API key and secret. Set clientSecret to null for Gigya keys */
 	public void setClientIDAndSecret(String clientID, String clientSecret) {
-		this.clientSecret = clientID;
+		this.clientID = clientID;
 		this.clientSecret = clientSecret;
 	}
 	
@@ -105,7 +105,6 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 						}
 					}
 				});
-//				clientConfig.setToken(token);
 			}
 		}
 	}
@@ -212,15 +211,13 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 					try {
 							if (token.getRefreshToken() != null) {
 								// do a Cognito refresh
-								String username = token.extractUsername();
-//
-								if (username != null) {
+								if (this.userName != null) {
 									// Add Api-Key and Api-Key-Secret to body if the request url matches zone5BaseUrl
 										body = new FormBody.Builder()
 											.add("client_id", this.clientID)
 											.add("client_secret", this.clientSecret)
 											.add("grant_type", GrantType.REFRESH_TOKEN.toString())
-											.add("username", username)
+											.add("username", this.userName)
 											.add("refresh_token", token.getRefreshToken()).build();
 
 									// assign the new token to original request Url

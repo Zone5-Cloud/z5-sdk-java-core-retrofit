@@ -66,13 +66,14 @@ public class BaseTestRetrofit extends BaseTest {
     }
 	
 	public boolean isSpecialized() {
-		return getBaseEndpoint() != null && (getBaseEndpoint().equals("https://api-sp.todaysplan.com.au") || getBaseEndpoint().equals("https://api-sp-staging.todaysplan.com.au"));
+		return getBaseEndpoint() != null && (getBaseEndpoint().equals("https://api-sp.todaysplan.com.au")
+				|| getBaseEndpoint().equals("https://api-sp-staging.todaysplan.com.au"));
 	}
 	
 	protected LoginResponse login() {
-		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL, TEST_PASSWORD, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst();
+		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL, TEST_PASSWORD,
+				clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst();
 		assertTrue("Failed to login - please check configuration in BaseTest.java", response.isSuccessful());
 		return response.body();
 	}
-
 }

@@ -9,18 +9,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import com.sun.deploy.util.ReflectionUtil;
-import com.sun.xml.internal.ws.client.sei.ResponseBuilder;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
 import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.annotations.NonNull;
-import okhttp3.MediaType;
-import okhttp3.ResponseBody;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.zone5cloud.core.enums.GrantType;
@@ -34,10 +25,6 @@ import com.zone5cloud.core.users.User;
 import com.zone5cloud.core.users.UserPreferences;
 import com.zone5cloud.core.utils.GsonManager;
 
-import org.mockito.Answers;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import retrofit2.Response;
 
 public class TestUsersAPI extends BaseTestRetrofit {
@@ -47,7 +34,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertTrue(responseExists.isSuccessful());
 		assertTrue(responseExists.body());
 	}
-	
+
 	/** To run this test you need a valid clientId & secret */
 	@Test
 	public void testRegistrationLoginDelete() throws Exception {
@@ -113,7 +100,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		
 		// Oops I forgot my password - send me an email with a magic link
 		assertTrue(userApi.resetPassword(email).blockingFirst().body());
-		
+
 		// Log back in
 		clientConfig.setUserName(email);
 		r = userApi.login(new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().body();
@@ -212,4 +199,18 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertEquals(200,response.code());
 	}
 
+	@Test
+	public void testReconfirm() {
+		login();
+		String email = userApi.me().blockingFirst().body().getEmail();
+		Response<Void> response = userApi.reconfirm(email).blockingFirst();
+		assertEquals(200,response.code());
+	}
+
+	@Test
+	public void testPasswordComplexityApi() {
+		login();
+		Response<String> response = userApi.passwordComplexity().blockingFirst();
+		assertNotNull(response.body());
+	}
 }
