@@ -299,6 +299,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		        		return body;
 		        	case Users.LOGOUT:
 		        		setToken((AuthToken)null);
+		        		setUserName(null);
 		        		break;
 	        		default:
 	        			break;
