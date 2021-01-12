@@ -39,7 +39,12 @@ import retrofit2.http.Url;
  *  
  *  Pass in a delegate if you want to be notified of updates to the auth token,
  *  for instance if you wish to save the token to persistent storage.
- *  
+ *
+ *  Please Note :
+ *  This Retrofit instance needs these two ConverterFactories to work correctly.
+          * ScalarsConverterFactory
+          * GsonConverterFactory
+ *
  * @author jean
  *
  */

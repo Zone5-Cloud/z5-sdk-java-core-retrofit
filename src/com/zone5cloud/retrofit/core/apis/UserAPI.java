@@ -73,7 +73,13 @@ public interface UserAPI {
     @GET(Users.REFRESH_TOKEN)
     Observable<Response<OAuthToken>> refreshToken();
 
-    /** Returns password complexity */
+    /**
+     * Returns password complexity on a Get request.
+     * This Retrofit api needs these two ConverterFactories to work correctly.
+        * ScalarsConverterFactory
+        * GsonConverterFactory
+     * @return ^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$ as String
+     */
     @GET(Users.PASSWORD_COMPLEXITY)
     Observable<Response<String>> passwordComplexity();
 

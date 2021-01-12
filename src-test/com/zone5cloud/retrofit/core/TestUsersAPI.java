@@ -201,16 +201,14 @@ public class TestUsersAPI extends BaseTestRetrofit {
 
 	@Test
 	public void testReconfirm() {
-		login();
-		String email = userApi.me().blockingFirst().body().getEmail();
-		Response<Void> response = userApi.reconfirm(email).blockingFirst();
-		assertEquals(200,response.code());
+		Response<Void> response = userApi.reconfirm(TEST_EMAIL).blockingFirst();
+		assertTrue(response.isSuccessful());
 	}
 
 	@Test
 	public void testPasswordComplexityApi() {
-		login();
 		Response<String> response = userApi.passwordComplexity().blockingFirst();
 		assertNotNull(response.body());
+		assertEquals("^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$",response.body());
 	}
 }
