@@ -5,7 +5,6 @@ import java.net.URL;
 
 import com.zone5cloud.core.ClientConfig;
 import org.apache.commons.io.FileUtils;
-import retrofit2.http.Url;
 
 public abstract class BaseTest {
 	

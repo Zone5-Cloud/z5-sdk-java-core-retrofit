@@ -17,7 +17,6 @@ import com.zone5cloud.core.enums.Z5HttpHeader;
 import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.users.LoginResponse;
-import com.zone5cloud.core.users.User;
 import com.zone5cloud.core.users.Users;
 import com.zone5cloud.core.utils.GsonManager;
 
@@ -29,7 +28,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import retrofit2.http.Url;
 
 /**
  * OKHttp Interceptor which:
