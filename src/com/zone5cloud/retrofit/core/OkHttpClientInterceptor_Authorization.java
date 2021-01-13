@@ -8,7 +8,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.google.gson.reflect.TypeToken;
 import com.zone5cloud.core.ClientConfig;
 import com.zone5cloud.core.Endpoints;
 import com.zone5cloud.core.Types;
