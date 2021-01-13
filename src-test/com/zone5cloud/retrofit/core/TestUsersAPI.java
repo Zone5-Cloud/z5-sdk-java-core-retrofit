@@ -65,7 +65,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		
 		User user = userApi.register(register).blockingFirst().body();
 		assertNotNull(user.getId()); // our unique userId
-		assertEquals(Locale.getDefault().toString(), user.getLocale());
+		assertEquals(Locale.getDefault().toString().toLowerCase(), user.getLocale());
 		assertEquals(email, user.getEmail());
 		
 		// Note - in S-Digital, the user will need to validate their email before they can login...

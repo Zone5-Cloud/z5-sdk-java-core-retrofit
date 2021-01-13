@@ -81,7 +81,7 @@
 		<dependency>
 			<groupId>com.zone5cloud</groupId>
   			<artifactId>z5-sdk-java-core</artifactId>
-  			<version>1.4.0</version>
+  			<version>1.5.0</version>
 		</dependency>
 
 		<dependency>
