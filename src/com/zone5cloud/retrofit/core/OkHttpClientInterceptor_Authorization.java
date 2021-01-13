@@ -167,7 +167,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 			}
 		}
 		// add the key and secret only if it is zone5 server url
-		if(this.zone5BaseUrl != null && originalRequestUrl.contains(
+		if(this.zone5BaseUrl != null && originalRequestUrl != null && originalRequestUrl.contains(
 				this.zone5BaseUrl.toString())) {
 			// APIKey headers go on unauthenticated requests too
 			String clientID = this.clientID;
