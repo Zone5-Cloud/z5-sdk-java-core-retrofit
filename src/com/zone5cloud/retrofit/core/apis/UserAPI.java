@@ -50,8 +50,8 @@ public interface UserAPI {
     Observable<Response<Boolean>> logout();
 
     /** Test if an email address is already registered in the system - true if the email already exists in the system */
-    @POST(Users.EMAIL_EXISTS)
-    Observable<Response<Boolean>> isEmailRegistered(@Body String email);
+    @GET(Users.EMAIL_EXISTS)
+    Observable<Response<Boolean>> isEmailRegistered(@Query("email") String email);
     
     /** Returns the status of email verification for the given user */
     @GET(Users.EMAIL_STATUS)

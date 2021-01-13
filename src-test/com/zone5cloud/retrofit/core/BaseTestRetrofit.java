@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 
 import com.google.gson.Gson;
+import com.zone5cloud.core.ClientConfig;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
 import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.users.LoginRequest;
@@ -41,21 +42,24 @@ public class BaseTestRetrofit extends BaseTest {
 		}
 	};
 	
-	@Before
-	public void init() {
+	protected Retrofit buildRetrofit(ClientConfig config) {
 		OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
-		auth = new OkHttpClientInterceptor_Authorization(clientConfig, delegate);
-		OkHttpClientInterceptor_UserAgent agent = new OkHttpClientInterceptor_UserAgent("ride-iOS/3.6.4 (1)");
-		
+		auth = new OkHttpClientInterceptor_Authorization(config, delegate);
+		OkHttpClientInterceptor_UserAgent agent = new OkHttpClientInterceptor_UserAgent("ride-iOS/3.6.4 (1)");		
         Gson gson = GsonManager.getInstance();
 
-        Retrofit retrofit = new Retrofit.Builder()
+		return new Retrofit.Builder()
                 .baseUrl(getBaseEndpoint())
                 .client(new OkHttpClient.Builder().cookieJar(new OkHttpClientCookieJar()).addInterceptor(nodecorate).addInterceptor(agent).addInterceptor(auth).build())
 				.addConverterFactory(ScalarsConverterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();
+	}
+	
+	@Before
+	public void init() {
+        Retrofit retrofit = buildRetrofit(this.clientConfig);
 
         userApi = retrofit.create(UserAPI.class);
         activitiesApi = retrofit.create(ActivitiesAPI.class);

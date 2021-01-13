@@ -3,8 +3,9 @@ package com.zone5cloud.retrofit.core;
 import java.io.File;
 import java.net.URL;
 
-import com.zone5cloud.core.ClientConfig;
 import org.apache.commons.io.FileUtils;
+
+import com.zone5cloud.core.ClientConfig;
 
 public abstract class BaseTest {
 	
@@ -14,9 +15,9 @@ public abstract class BaseTest {
 	protected String TEST_BIKE_UUID = null; // andrew SBC Staging: "d584c5cb-e81f-4fbe-bc0d-667e9bcd2c4c"
 	
 	/* SET YOUR SERVER ENDPOINT HERE */
-	protected String server = "";
+	private String server = "";
 	// This is your allocated clientId and secret - these can be set to null for S-Digital environments
-	protected ClientConfig clientConfig = new ClientConfig();
+	protected final ClientConfig clientConfig = new ClientConfig();
 
     public BaseTest() {
     		// read config ~/tp.env or ~/z5.env
@@ -41,6 +42,7 @@ public abstract class BaseTest {
     							break;
     						case "server":
     							server = value;
+    							clientConfig.setZone5BaseUrl(new URL(getBaseEndpoint()));
     							break;
     						case "clientID":
     							clientConfig.setClientID(value);
@@ -48,9 +50,6 @@ public abstract class BaseTest {
     						case "clientSecret":
     							clientConfig.setClientSecret(value);
     							break;
-							case "zone5BaseUrl":
-								clientConfig.setZone5BaseUrl(new URL(value));
-								break;
     						}
     					}
     				}

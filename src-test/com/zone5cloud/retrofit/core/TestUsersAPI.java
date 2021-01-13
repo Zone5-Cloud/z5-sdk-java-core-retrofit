@@ -8,6 +8,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import com.zone5cloud.retrofit.core.apis.UserAPI;
@@ -29,7 +31,7 @@ import retrofit2.Response;
 
 public class TestUsersAPI extends BaseTestRetrofit {
 	@Test
-	public void getEmailStatus() throws Exception {
+	public void getEmailExists() throws Exception {
 		Response<Boolean> responseExists = userApi.isEmailRegistered(TEST_EMAIL).blockingFirst();
 		assertTrue(responseExists.isSuccessful());
 		assertTrue(responseExists.body());
@@ -41,7 +43,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		
 		// You should set this to an email you control ...
 		String emailParts[] = TEST_EMAIL.split("@");
-		String email = String.format("%s+%d@%s", emailParts[0], System.currentTimeMillis(), emailParts[1]);
+		String email = String.format("%s%s%d@%s", emailParts[0], (emailParts[0].contains("+") ? "" : "+"), System.currentTimeMillis(), emailParts[1]);
 		String password = "superS3cretStu55";
 		String firstname = "Test";
 		String lastname = "User";
@@ -69,13 +71,19 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertEquals(email, user.getEmail());
 		
 		// Note - in S-Digital, the user will need to validate their email before they can login...
-		if (isSpecialized() && clientConfig.getClientID() == null) {
+		if (isSpecialized()) {
 			System.out.println("Waiting for confirmation that you have verified your email address ... press Enter when done");
 			System.in.read();
 		}
 		
 		// Login and set our bearer token
 		LoginRequest login = new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret());
+		if (isSpecialized()) {
+			List<String> terms = new ArrayList<>();
+			terms.add("Specialized_Terms_Apps");
+			terms.add("Specialized_Terms");
+			login.setAccept(terms);
+		}
 		System.out.println(GsonManager.getInstance(true).toJson(login));
 		
 		assertNull(clientConfig.getToken());
@@ -107,7 +115,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertNotNull(r.getToken());
 		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
 		
-		assertEquals(Locale.getDefault().toString(), r.getUser().getLocale());
+		assertEquals(Locale.getDefault().toString().toLowerCase(), r.getUser().getLocale());
 		me = userApi.me().blockingFirst().body();
 		assertEquals(me.getId(), user.getId());
 

@@ -8,7 +8,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
@@ -21,9 +20,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.zone5cloud.core.ClientConfig;
 import org.junit.Test;
 
+import com.zone5cloud.core.ClientConfig;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
 import com.zone5cloud.core.Z5Error;
 import com.zone5cloud.core.enums.GrantType;
@@ -31,9 +30,11 @@ import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.User;
+import com.zone5cloud.retrofit.core.apis.UserAPI;
 import com.zone5cloud.retrofit.core.utilities.Z5Utilities;
 
 import retrofit2.Response;
+import retrofit2.Retrofit;
 
 public class TestOAuthAPI extends BaseTestRetrofit {
 	private String email = "";
@@ -133,11 +134,8 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 				s2.release();
 			}
 		};
-		clientConfig = new ClientConfig();
-		clientConfig.setUserName(null);
-		clientConfig.setClientSecret("123");
-		clientConfig.setClientID(null);
-		OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(clientConfig,delegate1, delegate2);
+		
+		OkHttpClientInterceptor_Authorization interceptor = new OkHttpClientInterceptor_Authorization(clientConfig, delegate1, delegate2);
 		
 		assertEquals(2, interceptor.delegates.size());
 
@@ -253,17 +251,7 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 
 	@Test
 	public void testZone5Server_HasClientIdAndKey(){
-		BaseTestRetrofit retrofit = new BaseTestRetrofit();
-		try {
-			retrofit.clientConfig.setZone5BaseUrl(new URL("http://staging.todaysplan.com"));
-		}catch (MalformedURLException MUex){
-			System.out.println(" Malformed URL EXCEPTION"+MUex);
-		}
-		retrofit.server="staging.todaysplan.com.au";
-		retrofit.clientConfig.setClientID("3ts74n430pvqkbfbtb7l9qb17d");
-		retrofit.clientConfig.setClientSecret("q7vcdfc578ebln9gbasu00n8n09ca47lk7abm43nfma52jp9a5t");
-		retrofit.init();
-		Response<User> rsp = retrofit.userApi.me().blockingFirst();
+		Response<User> rsp = userApi.me().blockingFirst();
 		String clientId = rsp.raw().request().header("Api-Key");
 		String clientSecret = rsp.raw().request().header("Api-Key-Secret");
 
@@ -273,20 +261,16 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 	}
 
 	@Test
-	public void testNonZone5Server_HasNoClientIdAndKey(){
-		BaseTestRetrofit retrofit = new BaseTestRetrofit();
-		try {
-			retrofit.clientConfig.setZone5BaseUrl(new URL("http://someotherurl.com/"));
-		}catch (MalformedURLException MUex){
-			System.out.println("Malformed Url Exception"+MUex);
-		}
-		retrofit.server="staging.todaysplan.com.au";
-		retrofit.clientConfig.setClientID("3ts74n430pvqkbfbtb7l9qb17d");
-		retrofit.clientConfig.setClientSecret("q7vcdfc578ebln9gbasu00n8n09ca47lk7abm43nfma52jp9a5t");
-		retrofit.init();
+	public void testNonZone5Server_HasNoClientIdAndKey() throws Exception {
+		// configure with a bogus zone5baseUrl so that clientid and secret are not added
+		ClientConfig config = new ClientConfig();
+		config.setZone5BaseUrl(new URL("https://testserver.com.au"));
+		config.setClientID("testclientid");
+		config.setClientSecret("testsecret");
+		Retrofit retrofit = buildRetrofit(config);
+		UserAPI userApi = retrofit.create(UserAPI.class);
 
-
-		Response<User> rsp = retrofit.userApi.me().blockingFirst();
+		Response<User> rsp = userApi.me().blockingFirst();
 		String clientId = rsp.raw().request().header("Api-Key");
 		String clientSecret = rsp.raw().request().header("Api-Key-Secret");
 

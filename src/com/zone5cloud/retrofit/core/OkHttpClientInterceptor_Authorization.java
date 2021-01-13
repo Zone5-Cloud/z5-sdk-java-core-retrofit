@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.google.gson.reflect.TypeToken;
 import com.zone5cloud.core.ClientConfig;
 import com.zone5cloud.core.Endpoints;
 import com.zone5cloud.core.Types;
@@ -72,11 +73,16 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	 * @param delegates - delegates to receive callbacks whenever the token is updated.
 	 */
 	public OkHttpClientInterceptor_Authorization(ClientConfig clientConfig, Z5AuthorizationDelegate ...delegates) {
+		if (clientConfig == null) {
+			throw new IllegalArgumentException("Missing configuration");
+		}
+		
 		this.token.set(clientConfig.getToken());
 		this.clientID = clientConfig.getClientID();
 		this.clientSecret = clientConfig.getClientSecret();
 		this.zone5BaseUrl = clientConfig.getZone5BaseUrl();
 		this.userName = clientConfig.getUserName();
+		
 		for (Z5AuthorizationDelegate delegate: delegates) {
 			this.delegates.add(delegate);
 		}
@@ -186,6 +192,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
             newResponse.body(ResponseBody.create(MediaType.parse("application/json"), newTokenBody));
             return newResponse.build();
         }
+        
         
         return response;
 	}
