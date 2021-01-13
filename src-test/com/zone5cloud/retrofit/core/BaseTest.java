@@ -1,8 +1,11 @@
 package com.zone5cloud.retrofit.core;
 
 import java.io.File;
+import java.net.URL;
 
 import org.apache.commons.io.FileUtils;
+
+import com.zone5cloud.core.ClientConfig;
 
 public abstract class BaseTest {
 	
@@ -12,11 +15,10 @@ public abstract class BaseTest {
 	protected String TEST_BIKE_UUID = null; // andrew SBC Staging: "d584c5cb-e81f-4fbe-bc0d-667e9bcd2c4c"
 	
 	/* SET YOUR SERVER ENDPOINT HERE */
-	protected String server = "";
+	private String server = "";
 	// This is your allocated clientId and secret - these can be set to null for S-Digital environments
-    protected String clientID = ""; //"<your OAuth clientId issued by Zone5>";
-    protected String clientSecret = "";  //"<your OAuth secret issued by Zone5>";
-	
+	protected final ClientConfig clientConfig = new ClientConfig();
+
     public BaseTest() {
     		// read config ~/tp.env or ~/z5.env
     		File f = new File(System.getProperty("user.home")+File.separatorChar+"tp.env");
@@ -33,26 +35,28 @@ public abstract class BaseTest {
     						switch(key) {
     						case "username":
     							TEST_EMAIL = value;
+    							clientConfig.setUserName(value);
     							break;
     						case "password":
-    							TEST_PASSWORD = value;
+								TEST_PASSWORD = value;
     							break;
     						case "server":
     							server = value;
+    							clientConfig.setZone5BaseUrl(new URL(getBaseEndpoint()));
     							break;
     						case "clientID":
-    							clientID = value;
+    							clientConfig.setClientID(value);
     							break;
     						case "clientSecret":
-    							clientSecret = value;
+    							clientConfig.setClientSecret(value);
     							break;
     						}
     					}
     				}
     			} catch (Exception e) { }
     			
-    			if (f.exists() && TEST_EMAIL != null || server != null)
-    				System.out.println(String.format("[ Using credentials in file %s - server=%s, username=%s ]", f.getAbsolutePath(), server, TEST_EMAIL));
+    			if (f.exists() && clientConfig.getUserName() != null || server != null)
+    				System.out.println(String.format("[ Using credentials in file %s - server=%s, username=%s ]", f.getAbsolutePath(), server, clientConfig.getUserName()));
     		}
     }
     
