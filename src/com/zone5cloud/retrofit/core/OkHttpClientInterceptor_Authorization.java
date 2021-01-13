@@ -1,12 +1,14 @@
 package com.zone5cloud.retrofit.core;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.zone5cloud.core.ClientConfig;
 import com.zone5cloud.core.Endpoints;
 import com.zone5cloud.core.Types;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
@@ -35,7 +37,12 @@ import okhttp3.ResponseBody;
  *  
  *  Pass in a delegate if you want to be notified of updates to the auth token,
  *  for instance if you wish to save the token to persistent storage.
- *  
+ *
+ *  Please Note :
+ *  This Retrofit instance needs these two ConverterFactories to work correctly.
+          * ScalarsConverterFactory
+          * GsonConverterFactory
+ *
  * @author jean
  *
  */
@@ -43,14 +50,15 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	private final AtomicReference<AuthToken> token = new AtomicReference<>(null);
 	private String clientID;
 	private String clientSecret;
+	private String userName;
+	private final URL zone5BaseUrl;
+
 	protected final Set<Z5AuthorizationDelegate> delegates = new HashSet<>();
 	private final Object setTokenLock = new Object();
 	private final Object fetchTokenLock = new Object();
 	// create a thread pool to handle delegate callbacks. It needs to be single threaded so that changes are reported sequentially in order.
 	private final ExecutorService delegateExecutor = Executors.newSingleThreadExecutor();
-	
-	
-	
+
 	/**
 	 * OKHttp Interceptor which:
 	 *  * Does a refresh if the authorization token is expired or nearing expiry
@@ -60,22 +68,25 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	 *  Pass in a delegate if you want to be notified of updates to the auth token,
 	 *  for instance if you wish to save the token to persistent storage.
 	 *
-	 * @param token - the initial authorization token to be used in the Authorization header for all requests which require it. 
-	 * token may be null and can be set later via setToken(), or automatically set with a login request
-	 * @param clientID - Authentication service API key.
-	 * @param clientSecret - Authentication service API secret, Cognito only. Set to null for Gigya keys.
+	 * @param clientConfig (gets and sets token, client key , secret and username
 	 * @param delegates - delegates to receive callbacks whenever the token is updated.
 	 */
-	public OkHttpClientInterceptor_Authorization(AuthToken token, String clientID, String clientSecret, Z5AuthorizationDelegate ...delegates) {
-		this.token.set(token);
-		this.clientID = clientID;
-		this.clientSecret = clientSecret;
+	public OkHttpClientInterceptor_Authorization(ClientConfig clientConfig, Z5AuthorizationDelegate ...delegates) {
+		if (clientConfig == null) {
+			throw new IllegalArgumentException("Missing configuration");
+		}
+		
+		this.token.set(clientConfig.getToken());
+		this.clientID = clientConfig.getClientID();
+		this.clientSecret = clientConfig.getClientSecret();
+		this.zone5BaseUrl = clientConfig.getZone5BaseUrl();
+		this.userName = clientConfig.getUserName();
 		
 		for (Z5AuthorizationDelegate delegate: delegates) {
 			this.delegates.add(delegate);
 		}
 	}
-	
+
 	/** Set the Authentication service API key and secret. Set clientSecret to null for Gigya keys */
 	public void setClientIDAndSecret(String clientID, String clientSecret) {
 		this.clientID = clientID;
@@ -89,7 +100,6 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		// The synchronized ensures that token changes are reported on the delegate serially and in order.
 		synchronized(setTokenLock) {
 			AuthToken previousValue = this.token.getAndSet(token);
-		
 			// only call delegates if the value has changed
 			if ((token == null && previousValue != null) || (token != null && !token.equals(previousValue))) {
 				// this only schedules the execution. This call returns immediately and exits the lock. 
@@ -104,6 +114,10 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 				});
 			}
 		}
+	}
+
+	public void setUserName(String userName){
+		this.userName = userName;
 	}
 	
 	/** Get the Auth token */
@@ -138,30 +152,34 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	public Response intercept(Chain chain) throws IOException {
 		Request originalRequest = chain.request();
 		String path = originalRequest.url().encodedPath();
+		String originalRequestUrl =  getBaseUrl(originalRequest.url());
 		Request.Builder builder = originalRequest.newBuilder();
 		
 		AuthToken token = this.token.get();
 		if (token != null && token.getBearer() != null && Endpoints.requiresAuth(path)) {
-			refreshIfRequired(chain, getBaseUrl(originalRequest.url()));
-			
+
+			refreshIfRequired(chain, this.zone5BaseUrl);
+
 			// refetch token after potential refresh
 			token = this.token.get();
 			if (token != null && token.getBearer() != null) {
 				builder = builder.header(Z5HttpHeader.AUTHORIZATION.toString(), token.getBearer());
 			}
 		}
-		
-		// APIKey headers go on unauthenticated requests too
-		String clientID = this.clientID;
-		if (clientID != null) {
-			builder = builder.header(Z5HttpHeader.API_KEY.toString(), clientID);
+		// add the key and secret only if it is zone5 server url
+		if(this.zone5BaseUrl != null && originalRequestUrl.contains(
+				this.zone5BaseUrl.toString())) {
+			// APIKey headers go on unauthenticated requests too
+			String clientID = this.clientID;
+			if (clientID != null) {
+				builder = builder.header(Z5HttpHeader.API_KEY.toString(), clientID);
+			}
+
+			String clientSecret = this.clientSecret;
+			if (clientSecret != null) {
+				builder = builder.header(Z5HttpHeader.API_KEY_SECRET.toString(), clientSecret);
+			}
 		}
-		
-		String clientSecret = this.clientSecret;
-		if (clientSecret != null) {
-			builder = builder.header(Z5HttpHeader.API_KEY_SECRET.toString(), clientSecret);
-		}
-		
         Request newRequest = builder.build();
         Response response = chain.proceed(newRequest);
         
@@ -174,19 +192,23 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
             return newResponse.build();
         }
         
+        
         return response;
 	}
 	
 	/** 
 	 * If we have a refreshable token and it is expired or near expiry, do a token refresh 
 	 * @param chain - The intercepted chain
-	 * @param baseUrl - The base hose url from the request, used to issue the refresh request
+	 * @param zone5Url - The base hose url from the request, used to issue the refresh request
 	 **/
-	private void refreshIfRequired(Chain chain, String baseUrl) {
+	//auto refresh needs to use this configured baseURL for constructing the auto refresh request,
+	// not the baseURL of the current incoming request.
+	private void refreshIfRequired(Chain chain, URL zone5Url) {
+		RequestBody body = null;
 		// check the token for expiry
-		// note that refresh itself does not require auth so will not end up cyclicly back here
+		// note that refresh itself does not require auth so will not end up cyclically back here
 		AuthToken token = this.token.get();
-		if (token != null && token.getRefreshToken() != null && token.isExpired() && chain != null && baseUrl != null && !baseUrl.isEmpty()) {
+		if (token != null && token.getRefreshToken() != null && token.isExpired() && chain != null && zone5Url != null ) {
 			// because requests can be concurrent, we need to synchronize so that we only do one refresh for an expired token
 			// and all of the requests dependent on that refresh are queued until the token is refreshed
 			synchronized(fetchTokenLock) {
@@ -195,33 +217,36 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 				token = this.token.get();
 				if (token != null && token.isExpired()) {
 					try {
-						if (token.getRefreshToken() != null) {
-							// do a Cognito refresh
-							String username = token.extractUsername();
-							if (username != null) {
-								RequestBody body = new FormBody.Builder().add("client_id", clientID)
-																		 .add("client_secret", clientSecret)
-																		 .add("grant_type", GrantType.REFRESH_TOKEN.toString())
-																		 .add("username", username)
-																		 .add("refresh_token", token.getRefreshToken()).build();
-								String url = baseUrl + Users.NEW_ACCESS_TOKEN;
-								Request authRequest = new Request.Builder().url(url).post(body).build();
+							if (token.getRefreshToken() != null) {
+								// do a Cognito refresh
+								if (this.userName != null) {
+									// Add Api-Key and Api-Key-Secret to body if the request url matches zone5BaseUrl
+										body = new FormBody.Builder()
+											.add("client_id", this.clientID)
+											.add("client_secret", this.clientSecret)
+											.add("grant_type", GrantType.REFRESH_TOKEN.toString())
+											.add("username", this.userName)
+											.add("refresh_token", token.getRefreshToken()).build();
+
+									// assign the new token to original request Url
+									String url = zone5Url + Users.NEW_ACCESS_TOKEN;
+									Request authRequest = new Request.Builder().url(url).post(body).build();
+									Response response = chain.proceed(authRequest);
+									saveNewToken(Users.NEW_ACCESS_TOKEN, response);
+
+									response.close();
+								}
+							} else {
+								// do a Gigya refresh
+								// note: I put a check for getRefreshToken() into the entry if block
+								// which will exclude this case from being hit. If we want to support Gigya token refresh
+								// remove the getRefreshToken() != null check from the entry if statement at the start of this method
+								String url = zone5Url + Users.REFRESH_TOKEN;
+								Request authRequest = new Request.Builder().url(url).header(Z5HttpHeader.AUTHORIZATION.toString(), token.getBearer()).get().build();
 								Response response = chain.proceed(authRequest);
-								saveNewToken(Users.NEW_ACCESS_TOKEN, response);
+								saveNewToken(Users.REFRESH_TOKEN, response);
 								response.close();
 							}
-						} else {
-							// do a Gigya refresh
-							// note: I put a check for getRefreshToken() into the entry if block
-							// which will exclude this case from being hit. If we want to support Gigya token refresh
-							// remove the getRefreshToken() != null check from the entry if statement at the start of this method
-							String url = baseUrl + Users.REFRESH_TOKEN;
-							Request authRequest = new Request.Builder().url(url).header(Z5HttpHeader.AUTHORIZATION.toString(), token.getBearer()).get().build();
-							Response response = chain.proceed(authRequest);
-							saveNewToken(Users.REFRESH_TOKEN, response);
-							response.close();
-						}
-						
 					} catch(Exception e) {
 						// could not refresh. Continue as normal and the caller should receive their own 401 response
 					}
@@ -249,6 +274,10 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		        				login.setTokenExp(System.currentTimeMillis() + (login.getExpiresIn() * 1000));
 		        			}
 		        			setToken(new OAuthToken(login));
+
+		        			if(login.getUser() != null && login.getUser().getEmail() != null){
+								setUserName(login.getUser().getEmail());
+							}
 		        			body = GsonManager.getInstance().toJson(login, Types.LOGIN_RESPONSE);
 		        		}
 		        		return body;
@@ -274,6 +303,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		        		return body;
 		        	case Users.LOGOUT:
 		        		setToken((AuthToken)null);
+		        		setUserName(null);
 		        		break;
 	        		default:
 	        			break;

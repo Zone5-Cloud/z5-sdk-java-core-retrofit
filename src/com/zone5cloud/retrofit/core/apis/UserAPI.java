@@ -50,8 +50,8 @@ public interface UserAPI {
     Observable<Response<Boolean>> logout();
 
     /** Test if an email address is already registered in the system - true if the email already exists in the system */
-    @POST(Users.EMAIL_EXISTS)
-    Observable<Response<Boolean>> isEmailRegistered(@Body String email);
+    @GET(Users.EMAIL_EXISTS)
+    Observable<Response<Boolean>> isEmailRegistered(@Query("email") String email);
     
     /** Returns the status of email verification for the given user */
     @GET(Users.EMAIL_STATUS)
@@ -72,4 +72,18 @@ public interface UserAPI {
     /** Refresh a bearer token - get a new token if the current one is nearing expiry */
     @GET(Users.REFRESH_TOKEN)
     Observable<Response<OAuthToken>> refreshToken();
+
+    /**
+     * Returns password complexity on a Get request.
+     * This Retrofit api needs these two ConverterFactories to work correctly.
+        * ScalarsConverterFactory
+        * GsonConverterFactory
+     * @return ^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$ as String
+     */
+    @GET(Users.PASSWORD_COMPLEXITY)
+    Observable<Response<String>> passwordComplexity();
+
+    /** Reconfirm email */
+    @GET(Users.RECONFIRM)
+    Observable<Response<Void>> reconfirm(@Query("email") String email);
 }

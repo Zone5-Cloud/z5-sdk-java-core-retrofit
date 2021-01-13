@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 
 import com.google.gson.Gson;
+import com.zone5cloud.core.ClientConfig;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
 import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.users.LoginRequest;
@@ -22,6 +23,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 public class BaseTestRetrofit extends BaseTest {
 	
@@ -31,31 +33,33 @@ public class BaseTestRetrofit extends BaseTest {
 	protected ThirdPartyTokenAPI thirdPartyApi = null;
 	protected OAuthAPI authApi = null;
 	protected UserAgentAPI agentApi = null;
-	
 	protected OkHttpClientInterceptor_Authorization auth = null;
 	
-	protected AuthToken authToken = null;
 	protected Z5AuthorizationDelegate delegate = new Z5AuthorizationDelegate() {
 		@Override
 		public void onAuthTokenUpdated(AuthToken token) {
-			authToken = token;
+			clientConfig.setToken(token);
 		}
 	};
 	
-	@Before
-	public void init() {
+	protected Retrofit buildRetrofit(ClientConfig config) {
 		OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
-		auth = new OkHttpClientInterceptor_Authorization(authToken, clientID, clientSecret, delegate);
-		OkHttpClientInterceptor_UserAgent agent = new OkHttpClientInterceptor_UserAgent("ride-iOS/3.6.4 (1)");
-		
+		auth = new OkHttpClientInterceptor_Authorization(config, delegate);
+		OkHttpClientInterceptor_UserAgent agent = new OkHttpClientInterceptor_UserAgent("ride-iOS/3.6.4 (1)");		
         Gson gson = GsonManager.getInstance();
 
-        Retrofit retrofit = new Retrofit.Builder()
+		return new Retrofit.Builder()
                 .baseUrl(getBaseEndpoint())
                 .client(new OkHttpClient.Builder().cookieJar(new OkHttpClientCookieJar()).addInterceptor(nodecorate).addInterceptor(agent).addInterceptor(auth).build())
+				.addConverterFactory(ScalarsConverterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();
+	}
+	
+	@Before
+	public void init() {
+        Retrofit retrofit = buildRetrofit(this.clientConfig);
 
         userApi = retrofit.create(UserAPI.class);
         activitiesApi = retrofit.create(ActivitiesAPI.class);
@@ -66,13 +70,14 @@ public class BaseTestRetrofit extends BaseTest {
     }
 	
 	public boolean isSpecialized() {
-		return getBaseEndpoint() != null && (getBaseEndpoint().equals("https://api-sp.todaysplan.com.au") || getBaseEndpoint().equals("https://api-sp-staging.todaysplan.com.au"));
+		return getBaseEndpoint() != null && (getBaseEndpoint().equals("https://api-sp.todaysplan.com.au")
+				|| getBaseEndpoint().equals("https://api-sp-staging.todaysplan.com.au"));
 	}
 	
 	protected LoginResponse login() {
-		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL, TEST_PASSWORD, clientID, clientSecret)).blockingFirst();
+		Response<LoginResponse> response = userApi.login(new LoginRequest(TEST_EMAIL, TEST_PASSWORD,
+				clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst();
 		assertTrue("Failed to login - please check configuration in BaseTest.java", response.isSuccessful());
 		return response.body();
 	}
-
 }
