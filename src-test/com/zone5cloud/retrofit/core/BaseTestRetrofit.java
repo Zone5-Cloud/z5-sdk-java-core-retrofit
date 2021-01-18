@@ -2,6 +2,7 @@ package com.zone5cloud.retrofit.core;
 
 import static org.junit.Assert.assertTrue;
 
+import com.zone5cloud.retrofit.core.apis.*;
 import org.junit.Before;
 
 import com.google.gson.Gson;
@@ -10,12 +11,6 @@ import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.utils.GsonManager;
-import com.zone5cloud.retrofit.core.apis.ActivitiesAPI;
-import com.zone5cloud.retrofit.core.apis.MetricsAPI;
-import com.zone5cloud.retrofit.core.apis.OAuthAPI;
-import com.zone5cloud.retrofit.core.apis.ThirdPartyTokenAPI;
-import com.zone5cloud.retrofit.core.apis.UserAPI;
-import com.zone5cloud.retrofit.core.apis.UserAgentAPI;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Response;
@@ -31,6 +26,7 @@ public class BaseTestRetrofit extends BaseTest {
 	protected ThirdPartyTokenAPI thirdPartyApi = null;
 	protected OAuthAPI authApi = null;
 	protected UserAgentAPI agentApi = null;
+	protected DayAPI dayAPI = null;
 	
 	protected OkHttpClientInterceptor_Authorization auth = null;
 	
@@ -63,6 +59,7 @@ public class BaseTestRetrofit extends BaseTest {
         thirdPartyApi = retrofit.create(ThirdPartyTokenAPI.class);
         authApi = retrofit.create(OAuthAPI.class);
         agentApi = retrofit.create(UserAgentAPI.class);
+        dayAPI = retrofit.create(DayAPI.class);
     }
 	
 	public boolean isSpecialized() {
