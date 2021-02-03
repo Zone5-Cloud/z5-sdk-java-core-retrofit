@@ -255,7 +255,6 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		String clientId = rsp.raw().request().header("Api-Key");
 		String clientSecret = rsp.raw().request().header("Api-Key-Secret");
 
-		System.out.println("Client Id :"+clientId + "Client Secret : "+clientSecret);
 		assertNotNull(clientId);
 		assertNotNull(clientSecret);
 	}
@@ -274,7 +273,6 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		String clientId = rsp.raw().request().header("Api-Key");
 		String clientSecret = rsp.raw().request().header("Api-Key-Secret");
 
-		System.out.println("Client Id :"+clientId + "Client Secret : "+clientSecret);
 		assertNull(clientId);
 		assertNull(clientSecret);
 	}

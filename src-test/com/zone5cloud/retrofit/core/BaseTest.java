@@ -35,7 +35,6 @@ public abstract class BaseTest {
     						switch(key) {
     						case "username":
     							TEST_EMAIL = value;
-    							clientConfig.setUserName(value);
     							break;
     						case "password":
 								TEST_PASSWORD = value;
