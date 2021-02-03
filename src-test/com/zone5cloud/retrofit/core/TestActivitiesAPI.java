@@ -24,6 +24,7 @@ import com.zone5cloud.core.activities.DataFileUploadContext;
 import com.zone5cloud.core.activities.DataFileUploadIndex;
 import com.zone5cloud.core.activities.UserWorkoutFileSearch;
 import com.zone5cloud.core.activities.UserWorkoutResult;
+import com.zone5cloud.core.activities.UserWorkoutResultTurboExt;
 import com.zone5cloud.core.activities.VActivity;
 import com.zone5cloud.core.enums.ActivityResultType;
 import com.zone5cloud.core.enums.ActivityType;
@@ -176,7 +177,9 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		SearchInput<UserWorkoutFileSearch> search = new SearchInput<>(new UserWorkoutFileSearch());
 		
 		// Just request some summary fields
-		search.setFields(Arrays.asList("name", "distance", "training", "avgWatts", "avgBpm", "lat1", "lon1", "startTs", "locality", "peak3secWatts", "headunit.name", "aap.avgWatts"));
+		List<String> fields = new UserWorkoutResult().getFieldNames();
+		fields.addAll(new UserWorkoutResultTurboExt().getFieldNames("turboExt"));
+		search.setFields(fields);
 		
 		// We only want completed rides with files
 		search.getCriteria().setIsNotNull(Arrays.asList("fileId"));
@@ -198,6 +201,10 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		for(UserWorkoutResult r : result.getResult().getResults()) {
 			assertNotNull(r.getName());
 			assertNotNull(r.getFileId());
+			if (r.getTurboExt() != null) {
+				assertNotNull(r.getTurboExt().getAvgGPSSpeed());
+				assertNotNull(r.getTurboExt().getAvgBattery1Temperature());
+			}
 		}
 	}
 	
