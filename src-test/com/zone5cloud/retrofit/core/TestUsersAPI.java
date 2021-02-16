@@ -36,9 +36,24 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertTrue(responseExists.isSuccessful());
 		assertTrue(responseExists.body());
 	}
+	
+	@Test
+	public void testRegistrationLoggedIn() throws Exception {
+		login();
+		
+		assertNotNull(clientConfig.getToken());
+		testRegistrationLoginDelete();
+		
+	}
+	
+	@Test
+	public void testRegistrationNotLoggedIn() throws Exception {
+		assertNull(clientConfig.getToken());
+		testRegistrationLoginDelete();
+	}
 
 	/** To run this test you need a valid clientId & secret */
-	@Test
+	//@Test - being run from above with 2 different config scenarios
 	public void testRegistrationLoginDelete() throws Exception {
 		
 		// You should set this to an email you control ...
@@ -67,7 +82,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		
 		User user = userApi.register(register).blockingFirst().body();
 		assertNotNull(user.getId()); // our unique userId
-		assertEquals(Locale.getDefault().toString().toLowerCase(), user.getLocale());
+		assertEquals(Locale.getDefault().toString().toLowerCase(), user.getLocale().toLowerCase());
 		assertEquals(email, user.getEmail());
 		
 		// Note - in S-Digital, the user will need to validate their email before they can login...
@@ -86,7 +101,6 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		}
 		System.out.println(GsonManager.getInstance(true).toJson(login));
 		
-		assertNull(clientConfig.getToken());
 		Response<LoginResponse> responseAuth = userApi.login(login).blockingFirst();
 		assertTrue(responseAuth.isSuccessful());
 		LoginResponse r = responseAuth.body();
@@ -115,7 +129,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertNotNull(r.getToken());
 		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
 		
-		assertEquals(Locale.getDefault().toString().toLowerCase(), r.getUser().getLocale());
+		assertEquals(Locale.getDefault().toString().toLowerCase(), r.getUser().getLocale().toLowerCase());
 		me = userApi.me().blockingFirst().body();
 		assertEquals(me.getId(), user.getId());
 
