@@ -16,9 +16,9 @@ import retrofit2.Response;
 public class TestUtilities extends BaseTestRetrofit {
 	@Test
 	public void testErrors() throws Exception {
-		auth.setClientIDAndSecret("bogus clientid", "bogus email");
+		auth.setClientIDAndSecret("bogus clientid", "bogus secret");
 		Response<LoginResponse> response = userApi.login(new LoginRequest
-				(TEST_EMAIL, TEST_PASSWORD, "bogus clientid", "bogus email")).blockingSingle();
+				(TEST_EMAIL, TEST_PASSWORD, "bogus clientid", "bogus secret")).blockingSingle();
 		
 		assertFalse(response.isSuccessful());
 		assertEquals(401, response.code());
