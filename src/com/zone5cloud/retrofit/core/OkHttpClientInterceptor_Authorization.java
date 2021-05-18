@@ -255,7 +255,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 							}
 					} catch(Exception e) {
 						// could not refresh. Continue as normal and the caller should receive their own 401 response
-						this.log.e(this.getClass().getSimpleName(), "refresh request failed to send: " + e.getClass().getSimpleName() + " " + e.getMessage());
+						this.log.e(this.getClass().getSimpleName(), "refresh request failed to send", e);
 					}
 				}
 			}
@@ -316,7 +316,10 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	        			break;
 	        	}
 	        } else {
-	        	log.e(this.getClass().getSimpleName(), path + " failed with " + response.code() + ": " + response.message());
+	        	log.httpError(this.getClass().getSimpleName(), path, response.code(), response.message());
+	        	if (Users.NEW_ACCESS_TOKEN.equals(path) || Users.REFRESH_TOKEN.equals(path)) {
+	        		log.refreshError(this.getClass().getSimpleName(), path, response.code(), response.message());
+	        	}
 	        }
 		} catch(Exception e) {
 			// could not decode new token
