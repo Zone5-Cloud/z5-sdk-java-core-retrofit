@@ -12,6 +12,8 @@ import com.zone5cloud.core.ClientConfig;
 import com.zone5cloud.core.Endpoints;
 import com.zone5cloud.core.Types;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
+import com.zone5cloud.core.Z5Error;
+import com.zone5cloud.core.Z5ErrorItem;
 import com.zone5cloud.core.enums.GrantType;
 import com.zone5cloud.core.enums.Z5HttpHeader;
 import com.zone5cloud.core.oauth.AuthToken;
@@ -316,9 +318,27 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	        			break;
 	        	}
 	        } else {
-	        	log.httpError(this.getClass().getSimpleName(), path, response.code(), response.message());
+	        	String message = response.message();
+	        	
+	        	if (response.body() != null) {
+	        		try {
+	        			body = response.body().string();
+	        			Z5Error error = GsonManager.getInstance().fromJson(body, Types.ERROR);
+	        			message = error.getMessage();
+	        			if (error.getErrors() != null) {
+	        				for (Z5ErrorItem item: error.getErrors()) {
+	        					message += ". " + item.getCode() + ": " + item.getMessage() + " (" + item.getField() + ")";
+		        			}
+		        		}
+	        		}
+		        	catch(Exception e) {
+		        		// could not derive more detailed information from error message. Using response.message();
+		        	}
+	        	}
+	        	
+	        	log.httpError(this.getClass().getSimpleName(), path, response.code(), message);
 	        	if (Users.NEW_ACCESS_TOKEN.equals(path) || Users.REFRESH_TOKEN.equals(path)) {
-	        		log.refreshError(this.getClass().getSimpleName(), path, response.code(), response.message());
+	        		log.refreshError(this.getClass().getSimpleName(), path, response.code(), message);
 	        	}
 	        }
 		} catch(Exception e) {
