@@ -111,12 +111,9 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 			if ((token == null && previousValue != null) || (token != null && !token.equals(previousValue))) {
 				// this only schedules the execution. This call returns immediately and exits the lock. 
 				// Delegates are executed asynchronously but serially, in order.
-				delegateExecutor.execute(new Runnable() {
-					@Override
-					public void run() {
-						for(Z5AuthorizationDelegate delegate: delegates) {
-							delegate.onAuthTokenUpdated(token);
-						}
+				delegateExecutor.execute(() -> {
+					for(Z5AuthorizationDelegate delegate: delegates) {
+						delegate.onAuthTokenUpdated(token);
 					}
 				});
 			}
@@ -318,34 +315,40 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	        			break;
 	        	}
 	        } else {
-	        	String message = response.message();
-	        	
-	        	if (response.body() != null) {
-	        		try {
-	        			body = response.body().string();
-	        			Z5Error error = GsonManager.getInstance().fromJson(body, Types.ERROR);
-	        			message = error.getMessage();
-	        			if (error.getErrors() != null) {
-	        				for (Z5ErrorItem item: error.getErrors()) {
-	        					message += ". " + item.getCode() + ": " + item.getMessage() + " (" + item.getField() + ")";
-		        			}
-		        		}
-	        		}
-		        	catch(Exception e) {
-		        		// could not derive more detailed information from error message. Using response.message();
-		        	}
-	        	}
-	        	
-	        	log.httpError(this.getClass().getSimpleName(), path, response.code(), message);
-	        	if (Users.NEW_ACCESS_TOKEN.equals(path) || Users.REFRESH_TOKEN.equals(path)) {
-	        		log.refreshError(this.getClass().getSimpleName(), path, response.code(), message);
-	        	}
+	        	logHttpError(path, response);
 	        }
 		} catch(Exception e) {
-			// could not decode new token
+			// could not decode
+			log.e(this.getClass().getSimpleName(), "Failed to decode http " + path + " response", e);
 		}
 		
 		// no change
 		return body;
+	}
+	
+	private void logHttpError(String path, Response response) {
+		String message = response.message();
+    	
+    	if (response.body() != null) {
+    		try {
+    			String body = response.body().string();
+    			Z5Error error = GsonManager.getInstance().fromJson(body, Types.ERROR);
+    			StringBuilder builder = new StringBuilder(error.getMessage());
+    			if (error.getErrors() != null) {
+    				for (Z5ErrorItem item: error.getErrors()) {
+    					builder.append(". " + item.getCode() + ": " + item.getMessage() + " (" + item.getField() + ")");
+        			}
+        		}
+    			message = builder.toString();
+    		}
+        	catch(Exception e) {
+        		// could not derive more detailed information from error message. Using response.message();
+        	}
+    	}
+    	
+    	log.httpError(this.getClass().getSimpleName(), path, response.code(), message);
+    	if (Users.NEW_ACCESS_TOKEN.equals(path) || Users.REFRESH_TOKEN.equals(path)) {
+    		log.refreshError(this.getClass().getSimpleName(), path, response.code(), message);
+    	}
 	}
 }
