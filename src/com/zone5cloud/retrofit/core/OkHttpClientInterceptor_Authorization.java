@@ -18,7 +18,9 @@ import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.Users;
+import com.zone5cloud.core.utils.DefaultLogger;
 import com.zone5cloud.core.utils.GsonManager;
+import com.zone5cloud.core.utils.ILogger;
 
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
@@ -52,6 +54,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	private String clientSecret;
 	private String userName;
 	private final URL zone5BaseUrl;
+	private final ILogger log;
 
 	protected final Set<Z5AuthorizationDelegate> delegates = new HashSet<>();
 	private final Object setTokenLock = new Object();
@@ -85,6 +88,8 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		for (Z5AuthorizationDelegate delegate: delegates) {
 			this.delegates.add(delegate);
 		}
+		
+		this.log = clientConfig.getLogger() != null ? clientConfig.getLogger() : new DefaultLogger();
 	}
 
 	/** Set the Authentication service API key and secret. Set clientSecret to null for Gigya keys */
@@ -217,8 +222,9 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 				token = this.token.get();
 				if (token != null && token.isExpired()) {
 					try {
-							if (token.getRefreshToken() != null) {
+							if (token.getRefreshToken() != null && this.clientID != null && this.clientSecret != null) {
 								// do a Cognito refresh
+								this.log.v(this.getClass().getSimpleName(), "Performing cognito refresh");
 								if (this.userName != null) {
 									// Add Api-Key and Api-Key-Secret to body if the request url matches zone5BaseUrl
 										body = new FormBody.Builder()
@@ -249,6 +255,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 							}
 					} catch(Exception e) {
 						// could not refresh. Continue as normal and the caller should receive their own 401 response
+						this.log.e(this.getClass().getSimpleName(), "refresh request failed to send", e);
 					}
 				}
 			}
@@ -307,6 +314,11 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		        		break;
 	        		default:
 	        			break;
+	        	}
+	        } else {
+	        	log.httpError(this.getClass().getSimpleName(), path, response.code(), response.message());
+	        	if (Users.NEW_ACCESS_TOKEN.equals(path) || Users.REFRESH_TOKEN.equals(path)) {
+	        		log.refreshError(this.getClass().getSimpleName(), path, response.code(), response.message());
 	        	}
 	        }
 		} catch(Exception e) {
