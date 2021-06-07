@@ -270,85 +270,85 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		String body = null;
 		// capture token
 		try {
-	        if (response.isSuccessful()) {
-	        	switch(path) {
-		        	case Users.LOGIN:
-		        		body = response.body().string();
-		        		LoginResponse login = GsonManager.getInstance().fromJson(body, Types.LOGIN_RESPONSE);
-		        		if (login != null) {
-		        			if (login.getExpiresIn() != null) {
-		        				login.setTokenExp(System.currentTimeMillis() + (login.getExpiresIn() * 1000));
-		        			}
-		        			setToken(new OAuthToken(login));
-
-		        			if(login.getUser() != null && login.getUser().getEmail() != null){
+			if (response.isSuccessful()) {
+				switch(path) {
+					case Users.LOGIN:
+						body = response.body().string();
+						LoginResponse login = GsonManager.getInstance().fromJson(body, Types.LOGIN_RESPONSE);
+						if (login != null) {
+							if (login.getExpiresIn() != null) {
+								login.setTokenExp(System.currentTimeMillis() + (login.getExpiresIn() * 1000));
+							}
+							setToken(new OAuthToken(login));
+	
+							if(login.getUser() != null && login.getUser().getEmail() != null){
 								setUserName(login.getUser().getEmail());
 							}
-		        			body = GsonManager.getInstance().toJson(login, Types.LOGIN_RESPONSE);
-		        		}
-		        		return body;
-		        	case Users.REFRESH_TOKEN:
-		        		body = response.body().string();
-		        		OAuthToken alt = GsonManager.getInstance().fromJson(body, Types.OAUTHTOKEN);
-		        		if (alt != null) {
-		        			setToken(alt);
-		        			body = GsonManager.getInstance().toJson(alt, Types.OAUTHTOKEN);
-		        		}
-		        		return body;
-		        	case Users.NEW_ACCESS_TOKEN:
-		        		body = response.body().string();
-		        		OAuthToken newToken = GsonManager.getInstance().fromJson(body, Types.OAUTHTOKEN);
-		        		if (newToken != null) {
-		        			if (newToken.getExpiresIn() != null) {
-		        				// calculate expiry based on system clock and expiresIn seconds
-		        				newToken.setTokenExp(System.currentTimeMillis() + (newToken.getExpiresIn() * 1000));
-		        			}
-		        			setToken(newToken);
-		        			body = GsonManager.getInstance().toJson(newToken, Types.OAUTHTOKEN);
-		        		}
-		        		return body;
-		        	case Users.LOGOUT:
-		        		setToken((AuthToken)null);
-		        		setUserName(null);
-		        		break;
-	        		default:
-	        			break;
-	        	}
-	        } else {
-	        	logHttpError(path, response);
-	        }
+							body = GsonManager.getInstance().toJson(login, Types.LOGIN_RESPONSE);
+						}
+						return body;
+					case Users.REFRESH_TOKEN:
+						body = response.body().string();
+						OAuthToken alt = GsonManager.getInstance().fromJson(body, Types.OAUTHTOKEN);
+						if (alt != null) {
+							setToken(alt);
+							body = GsonManager.getInstance().toJson(alt, Types.OAUTHTOKEN);
+						}
+						return body;
+					case Users.NEW_ACCESS_TOKEN:
+						body = response.body().string();
+						OAuthToken newToken = GsonManager.getInstance().fromJson(body, Types.OAUTHTOKEN);
+						if (newToken != null) {
+							if (newToken.getExpiresIn() != null) {
+								// calculate expiry based on system clock and expiresIn seconds
+								newToken.setTokenExp(System.currentTimeMillis() + (newToken.getExpiresIn() * 1000));
+							}
+							setToken(newToken);
+							body = GsonManager.getInstance().toJson(newToken, Types.OAUTHTOKEN);
+						}
+						return body;
+					case Users.LOGOUT:
+						setToken((AuthToken)null);
+						setUserName(null);
+						break;
+					default:
+						break;
+				}
+			} else {
+				logHttpError(path, response);
+			}
 		} catch(Exception e) {
 			// could not decode
 			log.e(this.getClass().getSimpleName(), "Failed to decode http " + path + " response", e);
 		}
-		
+
 		// no change
 		return body;
 	}
 	
 	private void logHttpError(String path, Response response) {
 		String message = response.message();
-    	
-    	if (response.body() != null) {
-    		try {
-    			String body = response.body().string();
-    			Z5Error error = GsonManager.getInstance().fromJson(body, Types.ERROR);
-    			StringBuilder builder = new StringBuilder(error.getMessage());
-    			if (error.getErrors() != null) {
-    				for (Z5ErrorItem item: error.getErrors()) {
-    					builder.append(". " + item.getCode() + ": " + item.getMessage() + " (" + item.getField() + ")");
-        			}
-        		}
-    			message = builder.toString();
-    		}
-        	catch(Exception e) {
-        		// could not derive more detailed information from error message. Using response.message();
-        	}
-    	}
-    	
-    	log.httpError(this.getClass().getSimpleName(), path, response.code(), message);
-    	if (Users.NEW_ACCESS_TOKEN.equals(path) || Users.REFRESH_TOKEN.equals(path)) {
-    		log.refreshError(this.getClass().getSimpleName(), path, response.code(), message);
-    	}
+
+		if (response.body() != null) {
+			try {
+				String body = response.body().string();
+				Z5Error error = GsonManager.getInstance().fromJson(body, Types.ERROR);
+				StringBuilder builder = new StringBuilder(error.getMessage());
+				if (error.getErrors() != null) {
+					for (Z5ErrorItem item: error.getErrors()) {
+						builder.append(". " + item.getCode() + ": " + item.getMessage() + " (" + item.getField() + ")");
+					}
+				}
+				message = builder.toString();
+			}
+			catch(Exception e) {
+				// could not derive more detailed information from error message. Using response.message();
+			}
+		}
+
+		log.httpError(this.getClass().getSimpleName(), path, response.code(), message);
+		if (Users.NEW_ACCESS_TOKEN.equals(path) || Users.REFRESH_TOKEN.equals(path)) {
+			log.refreshError(this.getClass().getSimpleName(), path, response.code(), message);
+		}
 	}
 }
