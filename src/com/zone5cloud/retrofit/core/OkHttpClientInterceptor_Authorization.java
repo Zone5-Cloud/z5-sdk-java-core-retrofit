@@ -315,7 +315,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 						break;
 				}
 			} else {
-				logHttpError(path, response);
+				return logHttpError(path, response);
 			}
 		} catch(Exception e) {
 			// could not decode
@@ -326,12 +326,13 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		return body;
 	}
 	
-	private void logHttpError(String path, Response response) {
+	private String logHttpError(String path, Response response) {
+		String body = null;
 		String message = response.message();
 
 		if (response.body() != null) {
 			try {
-				String body = response.body().string();
+				body = response.body().string();
 				Z5Error error = GsonManager.getInstance().fromJson(body, Types.ERROR);
 				StringBuilder builder = new StringBuilder(error.getMessage());
 				if (error.getErrors() != null) {
@@ -350,5 +351,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		if (Users.NEW_ACCESS_TOKEN.equals(path) || Users.REFRESH_TOKEN.equals(path)) {
 			log.refreshError(this.getClass().getSimpleName(), path, response.code(), message);
 		}
+		
+		return body;
 	}
 }

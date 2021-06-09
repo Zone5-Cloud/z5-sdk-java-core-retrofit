@@ -13,9 +13,12 @@ import java.util.List;
 import java.util.Locale;
 
 import com.zone5cloud.retrofit.core.apis.UserAPI;
+import com.zone5cloud.retrofit.core.utilities.Z5Utilities;
+
 import io.reactivex.Observable;
 import org.junit.Test;
 
+import com.zone5cloud.core.Z5Error;
 import com.zone5cloud.core.enums.GrantType;
 import com.zone5cloud.core.enums.UnitMeasurement;
 import com.zone5cloud.core.oauth.OAuthToken;
@@ -183,6 +186,16 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertNotNull(user.getFirstname());
 		assertNotNull(user.getLastname());
 		assertNotNull(user.getEmail());
+	}
+	
+	@Test
+	public void testFail() {
+		Response<User> rsp = userApi.me().blockingFirst();
+		assertEquals(401, rsp.code());
+		Z5Error error = Z5Utilities.parseErrorResponse(rsp);
+		assertNotNull(error);
+		assertEquals("Authorization header with bearer token required", error.getMessage());
+		assertNull(rsp.body());
 	}
 	
 	@Test
