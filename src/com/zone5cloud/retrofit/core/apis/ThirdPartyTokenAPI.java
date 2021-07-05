@@ -1,20 +1,18 @@
 package com.zone5cloud.retrofit.core.apis;
 
 import com.zone5cloud.core.enums.UserConnectionsType;
-import com.zone5cloud.core.thirdpartyconnections.PushRegistration;
-import com.zone5cloud.core.thirdpartyconnections.PushRegistrationResponse;
-import com.zone5cloud.core.thirdpartyconnections.ThirdPartyToken;
-import com.zone5cloud.core.thirdpartyconnections.ThirdPartyTokenResponse;
+import com.zone5cloud.core.thirdpartyconnections.*;
+import com.zone5cloud.core.thirdpartyconnections.connections.ConnectionInitResponse;
+import com.zone5cloud.core.thirdpartyconnections.connections.ConnectionsResponse;
 import com.zone5cloud.core.users.Users;
 
 import io.reactivex.Observable;
+import okhttp3.ResponseBody;
 import retrofit2.Response;
-import retrofit2.http.Body;
-import retrofit2.http.DELETE;
-import retrofit2.http.GET;
-import retrofit2.http.POST;
-import retrofit2.http.Path;
-import retrofit2.http.Query;
+import retrofit2.http.*;
+
+import java.util.List;
+import java.util.Map;
 
 
 public interface ThirdPartyTokenAPI {
@@ -48,4 +46,38 @@ public interface ThirdPartyTokenAPI {
     @DELETE(Users.DEREGISTER_DEVICE_THIRD_PARTY_CONNECTION)
     Observable<Response<Void>> deregisterDeviceWithThirdParty(@Path("token") String token);
 
+    /**
+     * The name of the service that will be connected.
+     * @param service The name of the service that will be connected.
+     * @param emptyObject an empty body
+     * @return On a successful request returns  {@link ConnectionInitResponse} containing
+     * the endpoint returns an OAuth URL allowing you to log into and authorize the third-party service.
+     */
+    @POST(ThirdParty.INIT_CONNECTION_PAIRING)
+    Observable<Response<ConnectionInitResponse>> initConnectionPairing(@Path("service") UserConnectionsType connectionType, @Body Object emptyObject);
+
+    /**
+     *
+     * @param connectionType
+     * @param queries The query string returned by the third-party when you initiated the connection.
+     * @return
+     */
+    @GET(ThirdParty.CONFIRM_CONNECTION_PAIRING)
+    Observable<Response<ResponseBody>> confirmConnectionPairing(@Path("connectionType")UserConnectionsType connectionType, @QueryMap Map<String, String> queries);
+
+    /**
+     * Get a list and detailed summary of all user connections to services supported by Zone 5 Cloud
+     * @return On a successful request, the endpoint returns a detailed list of all supported third-party services,
+     * noting where the user has enabled access for their account.
+     */
+    @GET(ThirdParty.GET_CONNECTIONS)
+    Observable<Response<List<ConnectionsResponse>>> getConnections();
+
+    /**
+     * Revoke an existing connection to a third-party service identified by connectionType.
+     * @param connectionType third-party service identifier
+     * @return On a successful request, the endpoint returns true with HTTP status code 200 OK.
+     */
+    @GET(ThirdParty.REVOKE_CONNECTION)
+    Observable<Response<Boolean>> removeConnection(@Path("connectionType")UserConnectionsType connectionType);
 }
