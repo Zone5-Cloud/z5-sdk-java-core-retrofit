@@ -57,13 +57,13 @@ public interface ThirdPartyTokenAPI {
     Observable<Response<ConnectionInitResponse>> initConnectionPairing(@Path("service") UserConnectionsType connectionType, @Body Object emptyObject);
 
     /**
-     *
+     * Confirm a connection to a third-party service, such as Garmin Connect or Strava.
      * @param connectionType
      * @param queries The query string returned by the third-party when you initiated the connection.
      * @return
      */
     @GET(ThirdParty.CONFIRM_CONNECTION_PAIRING)
-    Observable<Response<ResponseBody>> confirmConnectionPairing(@Path("connectionType")UserConnectionsType connectionType, @QueryMap Map<String, String> queries);
+    Observable<Response<ResponseBody>> confirmConnectionPairing(@Path("connectionType") UserConnectionsType connectionType, @QueryMap Map<String, String> queries);
 
     /**
      * Get a list and detailed summary of all user connections to services supported by Zone 5 Cloud
@@ -79,5 +79,5 @@ public interface ThirdPartyTokenAPI {
      * @return On a successful request, the endpoint returns true with HTTP status code 200 OK.
      */
     @GET(ThirdParty.REVOKE_CONNECTION)
-    Observable<Response<Boolean>> removeConnection(@Path("connectionType")UserConnectionsType connectionType);
+    Observable<Response<Boolean>> removeConnection(@Path("connectionType") UserConnectionsType connectionType);
 }
