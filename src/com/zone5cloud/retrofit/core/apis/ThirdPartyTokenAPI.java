@@ -54,7 +54,7 @@ public interface ThirdPartyTokenAPI {
      * the endpoint returns an OAuth URL allowing you to log into and authorize the third-party service.
      */
     @POST(ThirdParty.INIT_CONNECTION_PAIRING)
-    Observable<Response<ConnectionInitResponse>> initConnectionPairing(@Path("service") UserConnectionsType connectionType, @Body Object emptyObject);
+    Observable<Response<ConnectionInitResponse>> initConnectionPairing(@Path("connectionType") UserConnectionsType connectionType, @Body Object emptyObject);
 
     /**
      * Confirm a connection to a third-party service, such as Garmin Connect or Strava.
