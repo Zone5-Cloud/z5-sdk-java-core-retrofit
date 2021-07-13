@@ -6,16 +6,15 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.zone5cloud.core.thirdpartyconnections.*;
+import com.zone5cloud.core.thirdpartyconnections.connections.ConnectionInitResponse;
+import com.zone5cloud.core.thirdpartyconnections.connections.ConnectionsResponse;
 import org.junit.Before;
 import org.junit.Test;
-
 import com.zone5cloud.core.enums.UserConnectionsType;
-import com.zone5cloud.core.thirdpartyconnections.PushRegistration;
-import com.zone5cloud.core.thirdpartyconnections.PushRegistrationResponse;
-import com.zone5cloud.core.thirdpartyconnections.ThirdPartyToken;
-import com.zone5cloud.core.thirdpartyconnections.ThirdPartyTokenResponse;
-
 import retrofit2.Response;
+import java.util.List;
+
 
 public class TestThirdPartyConnections extends BaseTestRetrofit {
 	@Before
@@ -25,6 +24,7 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 	
 	@Test
 	public void testThirdPartyTokenCrud() throws Exception {
+		thirdPartyApi.removeThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
 		
 		ThirdPartyTokenResponse rsp = thirdPartyApi.hasThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
 		assertFalse(rsp.getAvailable());
@@ -78,4 +78,30 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 		rsp2 = thirdPartyApi.deregisterDeviceWithThirdParty("tokenABC").blockingFirst();
 		assertTrue(rsp.code() >= 200 && rsp.code() < 300);
 	}
+
+    @Test
+    public void testConnectionInit() {
+        Response<ConnectionInitResponse> rsp = thirdPartyApi.initConnectionPairing(UserConnectionsType.garminconnect, new Object()).blockingFirst();
+        assertTrue(rsp.code() >= 200 && rsp.code() < 300);
+        ConnectionInitResponse response = rsp.body();
+        assertNotNull(response);
+        assertNotNull(response.getConfirmationUrl());
+    }
+
+    @Test
+    public void testGetConnections() {
+        Response<List<ConnectionsResponse>> rsp = thirdPartyApi.getConnections().blockingFirst();
+        assertTrue(rsp.code() >= 200 && rsp.code() < 300);
+        List<ConnectionsResponse> connections = rsp.body();
+        assertNotNull(connections);
+        assertNotEquals(connections.size(), 0);
+    }
+
+    @Test
+    public void testRevokeConnection() {
+        Response<Boolean> rsp = thirdPartyApi.removeConnection(UserConnectionsType.garminconnect).blockingFirst();
+        assertTrue(rsp.code() >= 200 && rsp.code() < 300);
+        assertNotNull(rsp.body());
+        assertTrue(rsp.body());
+    }
 }
