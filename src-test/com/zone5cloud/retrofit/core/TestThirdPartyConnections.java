@@ -24,6 +24,7 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 	
 	@Test
 	public void testThirdPartyTokenCrud() throws Exception {
+		thirdPartyApi.removeThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
 		
 		ThirdPartyTokenResponse rsp = thirdPartyApi.hasThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
 		assertFalse(rsp.getAvailable());

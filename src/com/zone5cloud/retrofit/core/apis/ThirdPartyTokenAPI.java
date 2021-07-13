@@ -18,14 +18,17 @@ import java.util.Map;
 public interface ThirdPartyTokenAPI {
 	
 	/** Set a 3rd party OAuth token - returns a success: true|false */
+	@Deprecated
     @POST(Users.SET_THIRD_PARTY_CONNECTION)
     Observable<Response<ThirdPartyTokenResponse>> setThirdPartyToken(@Body ThirdPartyToken token, @Query("service_name") UserConnectionsType type);
 
     /** Delete a 3rd party OAuth token - returns a success: true|false */
+	@Deprecated
     @POST(Users.REM_THIRD_PARTY_CONNECTION)
     Observable<Response<ThirdPartyTokenResponse>> removeThirdPartyToken(@Query("service_name") UserConnectionsType type);
     
     /** Returns details of the current 3rd party token (if any) - returns a available: true|false, token: {...} */
+	@Deprecated
     @GET(Users.HAS_THIRD_PARTY_CONNECTION)
     Observable<Response<ThirdPartyTokenResponse>> hasThirdPartyToken(@Query("service_name") UserConnectionsType type);
     
