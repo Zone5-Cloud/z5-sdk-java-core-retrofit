@@ -1,10 +1,10 @@
 name: SonarCloud Scan
 
 on:
-  pull_request:
   push:
     branches:
       - master
+  pull_request:
 jobs:
   build:
     runs-on: ubuntu-latest
