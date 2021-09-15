@@ -6,14 +6,23 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.zone5cloud.core.thirdpartyconnections.*;
-import com.zone5cloud.core.thirdpartyconnections.connections.ConnectionInitResponse;
-import com.zone5cloud.core.thirdpartyconnections.connections.ConnectionsResponse;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
+
 import com.zone5cloud.core.enums.UserConnectionsType;
+import com.zone5cloud.core.thirdpartyconnections.PushRegistration;
+import com.zone5cloud.core.thirdpartyconnections.PushRegistrationResponse;
+import com.zone5cloud.core.thirdpartyconnections.ThirdPartyToken;
+import com.zone5cloud.core.thirdpartyconnections.ThirdPartyTokenResponse;
+import com.zone5cloud.core.thirdpartyconnections.connections.ConnectionInitResponse;
+import com.zone5cloud.core.thirdpartyconnections.connections.ConnectionsResponse;
+import com.zone5cloud.retrofit.core.utilities.Z5Utilities;
+
 import retrofit2.Response;
-import java.util.List;
 
 
 public class TestThirdPartyConnections extends BaseTestRetrofit {
@@ -23,7 +32,7 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 	}
 	
 	@Test
-	public void testThirdPartyTokenCrud() throws Exception {
+	public void testThirdPartyTokenCrudLegacy() throws Exception {
 		thirdPartyApi.removeThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
 		
 		ThirdPartyTokenResponse rsp = thirdPartyApi.hasThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
@@ -44,6 +53,27 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 		
 		rsp = thirdPartyApi.hasThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
 		assertFalse(rsp.getAvailable());
+	}
+	
+	@Test
+	public void testConnectService() throws Exception {
+		List<UserConnectionsType> types = Arrays.asList(UserConnectionsType.strava, UserConnectionsType.wahoo, UserConnectionsType.garminconnect, UserConnectionsType.garmintraining);
+		
+		for(UserConnectionsType type: types) {
+			// connect
+			Response<String> rsp = thirdPartyApi.pairConnection(type, "appname://callback.test.com").blockingFirst();
+			if (rsp.isSuccessful()) {
+				String connectService = rsp.body();
+				
+				URL url = new URL(connectService);
+				assertEquals("connect.zone5cloud.com", url.getHost());
+				assertTrue(url.getQuery().contains("redirectUrl=appname://callback.test.com"));
+				assertTrue(url.getQuery().contains("type=" + type.name()));
+			} else {
+				String errorMsg = Z5Utilities.parseErrorResponse(rsp).getMessage();
+				assertTrue("response failed: " + errorMsg, false);
+			}
+		}
 	}
 	
 	@Test
