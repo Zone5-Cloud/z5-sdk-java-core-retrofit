@@ -2,18 +2,22 @@ package com.zone5cloud.retrofit.core;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+
 import org.junit.Before;
 
 import com.google.gson.Gson;
 import com.zone5cloud.core.ClientConfig;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
 import com.zone5cloud.core.oauth.AuthToken;
+import com.zone5cloud.core.terms.TermsAndConditions;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.utils.GsonManager;
 import com.zone5cloud.retrofit.core.apis.ActivitiesAPI;
 import com.zone5cloud.retrofit.core.apis.MetricsAPI;
 import com.zone5cloud.retrofit.core.apis.OAuthAPI;
+import com.zone5cloud.retrofit.core.apis.TermsAPI;
 import com.zone5cloud.retrofit.core.apis.ThirdPartyTokenAPI;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
 import com.zone5cloud.retrofit.core.apis.UserAgentAPI;
@@ -28,6 +32,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 public class BaseTestRetrofit extends BaseTest {
 	
 	protected UserAPI userApi = null;
+	protected TermsAPI termsApi = null;
 	protected ActivitiesAPI activitiesApi = null;
 	protected MetricsAPI metricsApi = null;
 	protected ThirdPartyTokenAPI thirdPartyApi = null;
@@ -39,6 +44,11 @@ public class BaseTestRetrofit extends BaseTest {
 		@Override
 		public void onAuthTokenUpdated(AuthToken token) {
 			clientConfig.setToken(token);
+		}
+		
+		@Override
+		public void onTermsUpdated(List<TermsAndConditions> updatedTerms) {
+			
 		}
 	};
 	
@@ -62,6 +72,7 @@ public class BaseTestRetrofit extends BaseTest {
         Retrofit retrofit = buildRetrofit(this.clientConfig);
 
         userApi = retrofit.create(UserAPI.class);
+        termsApi = retrofit.create(TermsAPI.class);
         activitiesApi = retrofit.create(ActivitiesAPI.class);
         metricsApi = retrofit.create(MetricsAPI.class);
         thirdPartyApi = retrofit.create(ThirdPartyTokenAPI.class);

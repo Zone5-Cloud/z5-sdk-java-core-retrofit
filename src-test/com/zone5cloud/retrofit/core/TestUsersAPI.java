@@ -12,24 +12,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import com.zone5cloud.retrofit.core.apis.UserAPI;
-import com.zone5cloud.retrofit.core.utilities.Z5Utilities;
-
-import io.reactivex.Observable;
 import org.junit.Test;
 
 import com.zone5cloud.core.Z5Error;
-import com.zone5cloud.core.enums.GrantType;
 import com.zone5cloud.core.enums.UnitMeasurement;
 import com.zone5cloud.core.oauth.OAuthToken;
+import com.zone5cloud.core.terms.TermsAndConditions;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.NewPassword;
+import com.zone5cloud.core.users.RefreshRequest;
 import com.zone5cloud.core.users.RegisterUser;
 import com.zone5cloud.core.users.User;
 import com.zone5cloud.core.users.UserPreferences;
 import com.zone5cloud.core.utils.GsonManager;
+import com.zone5cloud.retrofit.core.apis.UserAPI;
+import com.zone5cloud.retrofit.core.utilities.Z5Utilities;
 
+import io.reactivex.Observable;
 import retrofit2.Response;
 
 public class TestUsersAPI extends BaseTestRetrofit {
@@ -72,10 +72,10 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		register.setFirstname(firstname);
 		register.setLastname(lastname);
 		
-		// For S-Digital registrations (optional)
-		//register.setParams(new HashMap<String, String>(2));
-		//register.getParams().put("regoSource", "Rider Hub");
-		//register.getParams().put("regoKey", "<alternate GIGYA ACCESS KEY>");
+		// add all required terms
+		List<TermsAndConditions> terms = termsApi.required().blockingFirst().body();
+		register.setAccept(new ArrayList<>(terms.size()));
+		terms.forEach(t -> register.getAccept().add(t.getTermsId()));
 		
 		// optional - set weight, thresholds, dob, gender etc
 		register.setWeight(80.1d);
@@ -83,7 +83,12 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		// check that this user does not yet exist in the system
 		assertFalse(userApi.isEmailRegistered(email).blockingFirst().body());
 		
-		User user = userApi.register(register).blockingFirst().body();
+		Response<User> r = userApi.register(register).blockingFirst(); 
+		if (!r.isSuccessful()) {
+			assertTrue(Z5Utilities.parseErrorResponse(r).getMessage(), false);
+		}
+		
+		User user = r.body();
 		assertNotNull(user.getId()); // our unique userId
 		assertEquals(Locale.getDefault().toString().toLowerCase(), user.getLocale().toLowerCase());
 		assertEquals(email, user.getEmail());
@@ -96,19 +101,14 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		
 		// Login and set our bearer token
 		LoginRequest login = new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret());
-		if (isSpecialized()) {
-			List<String> terms = new ArrayList<>();
-			terms.add("Specialized_Terms_Apps");
-			terms.add("Specialized_Terms");
-			login.setAccept(terms);
-		}
+
 		System.out.println(GsonManager.getInstance(true).toJson(login));
 		
 		Response<LoginResponse> responseAuth = userApi.login(login).blockingFirst();
 		assertTrue(responseAuth.isSuccessful());
-		LoginResponse r = responseAuth.body();
-		assertNotNull(r.getToken());
-		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
+		LoginResponse loginResponse = responseAuth.body();
+		assertNotNull(loginResponse.getToken());
+		assertTrue(loginResponse.getTokenExp() > System.currentTimeMillis() + 30000);
 		assertNotNull(clientConfig.getToken());
 		
 		// Try it out!
@@ -128,51 +128,38 @@ public class TestUsersAPI extends BaseTestRetrofit {
 
 		// Log back in
 		clientConfig.setUserName(email);
-		r = userApi.login(new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().body();
-		assertNotNull(r.getToken());
-		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
+		loginResponse = userApi.login(new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().body();
+		assertNotNull(loginResponse.getToken());
+		assertTrue(loginResponse.getTokenExp() > System.currentTimeMillis() + 30000);
 		
-		assertEquals(Locale.getDefault().toString().toLowerCase(), r.getUser().getLocale().toLowerCase());
+		assertEquals(Locale.getDefault().toString().toLowerCase(), loginResponse.getUser().getLocale().toLowerCase());
 		me = userApi.me().blockingFirst().body();
 		assertEquals(me.getId(), user.getId());
 
 		// Change my password and try it out
-		assertEquals(200, userApi.changePasswordSpecialized(new NewPassword(password, "myNewPassword123!!")).blockingFirst().code());
+		assertEquals(200, userApi.setPassword(new NewPassword(password, "myNewPassword123!!")).blockingFirst().code());
 		assertTrue(userApi.logout().blockingFirst().body());
 
-
 		
-		r = userApi.login(new LoginRequest(email, "myNewPassword123!!", clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().body();
-		assertNotNull(r.getToken());
-		assertTrue(r.getTokenExp() > System.currentTimeMillis() + 30000);
+		loginResponse = userApi.login(new LoginRequest(email, "myNewPassword123!!", clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().body();
+		assertNotNull(loginResponse.getToken());
+		assertTrue(loginResponse.getTokenExp() > System.currentTimeMillis() + 30000);
 		
 		// Exercise the refresh access token
-		if (isSpecialized() && r.getRefresh() == null) {
-			// gigya token
-			OAuthToken alt = userApi.refreshToken().blockingFirst().body();
-			assertNotNull(alt.getToken());
-			assertNotNull(alt.getTokenExp());
-			assertTrue(alt.getTokenExp() > System.currentTimeMillis() + 30000);
-		} else if (r.getRefresh() != null){
-			// cognito token
-			Response<OAuthToken> response = authApi.refreshAccessToken(clientConfig.getClientID(), clientConfig.getClientSecret(), email, GrantType.REFRESH_TOKEN, r.getRefresh()).blockingFirst();
-			OAuthToken tok = response.body();
-			assertNotNull(tok.getToken());
-			assertNotNull(tok.getTokenExp());
-			assertNotNull(tok.getRefreshToken());
-			assertTrue(tok.getTokenExp() > System.currentTimeMillis() + 30000);
+		if (loginResponse.getRefresh() != null) {
+			OAuthToken token = userApi.refreshToken(new RefreshRequest(email, loginResponse.getRefresh())).blockingFirst().body().getOAuthToken();
+			assertNotNull(token.getToken());
+			assertNotNull(token.getTokenExp());
+			assertTrue(token.getTokenExp() > System.currentTimeMillis() + 30000);
 		}
 		
-		// Gigya needs to be deleted via GIGYA
-		if (!isSpecialized() && r.getRefresh() == null) {
-			// Delete this account
-			assertEquals(204, userApi.delete(me.getId()).blockingFirst().code());
+		// Delete this account
+		assertEquals(204, userApi.delete(me.getId()).blockingFirst().code());
 			
-			// We are no longer valid!
-			assertEquals(401, userApi.me().blockingFirst().code());
+		// We are no longer valid!
+		assertEquals(401, userApi.me().blockingFirst().code());
 			
-			assertEquals(401, userApi.login(new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().code());
-		}
+		assertEquals(401, userApi.login(new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret())).blockingFirst().code());
 	}
 		
 	@Test

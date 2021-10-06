@@ -66,7 +66,7 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 				String connectService = rsp.body();
 				
 				URL url = new URL(connectService);
-				assertEquals("connect.zone5cloud.com", url.getHost());
+				assertTrue(url.getHost().startsWith("connect") && (url.getHost().endsWith("zone5cloud.com") || (url.getHost().endsWith("specialized.com"))));
 				assertTrue(url.getQuery().contains("redirectUrl=appname://callback.test.com"));
 				assertTrue(url.getQuery().contains("type=" + type.name()));
 			} else {

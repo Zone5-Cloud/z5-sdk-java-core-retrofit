@@ -9,7 +9,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,6 +24,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import com.zone5cloud.core.ClientConfig;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
@@ -28,11 +34,23 @@ import com.zone5cloud.core.Z5Error;
 import com.zone5cloud.core.enums.GrantType;
 import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.oauth.OAuthToken;
+import com.zone5cloud.core.terms.TermsAndConditions;
 import com.zone5cloud.core.users.LoginResponse;
+import com.zone5cloud.core.users.RefreshRequest;
 import com.zone5cloud.core.users.User;
+import com.zone5cloud.core.utils.GsonManager;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
 import com.zone5cloud.retrofit.core.utilities.Z5Utilities;
 
+import okhttp3.Interceptor.Chain;
+import okhttp3.internal.http.RealResponseBody;
+import okio.BufferedSource;
+import okio.ByteString;
+import okhttp3.MediaType;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response.Builder;
+import okhttp3.ResponseBody;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 
@@ -53,20 +71,21 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		setup();
 		
 		// Exercise the refresh access token
-		if (isSpecialized() && clientConfig.getToken().getRefreshToken() == null) {
-			// gigya
-			OAuthToken alt = userApi.refreshToken().blockingFirst().body();
-			assertNotNull(alt.getToken());
-			assertNotNull(alt.getTokenExp());
-			assertTrue(alt.getTokenExp() > System.currentTimeMillis() + 30000);
-		} else if (clientConfig.getToken().getRefreshToken() != null){
-			// cognito
+		if (clientConfig.getToken().getRefreshToken() != null) {
+			// refresh endpoint
+			LoginResponse loginResponse = userApi.refreshToken(new RefreshRequest(email, clientConfig.getToken().getRefreshToken())).blockingFirst().body();
+			OAuthToken token = loginResponse.getOAuthToken();
+			assertNotNull(token.getToken());
+			assertNotNull(token.getTokenExp());
+			assertTrue(token.getTokenExp() > System.currentTimeMillis() + 30000);
+		
+			// oauth refresh
 			Response<OAuthToken> response = authApi.refreshAccessToken(clientConfig.getClientID(), clientConfig.getClientSecret(), email, GrantType.REFRESH_TOKEN, clientConfig.getToken().getRefreshToken()).blockingFirst();
-			OAuthToken tok = response.body();
-			assertNotNull(tok.getToken());
-			assertNotNull(tok.getTokenExp());
-			assertNotNull(tok.getRefreshToken());
-			assertTrue(tok.getTokenExp() > System.currentTimeMillis() + 30000);
+			token = response.body();
+			assertNotNull(token.getToken());
+			assertNotNull(token.getTokenExp());
+			assertNotNull(token.getRefreshToken());
+			assertTrue(token.getTokenExp() > System.currentTimeMillis() + 30000);
 		} else {
 			// legacy tp token with no refresh
 			Response<OAuthToken> response = authApi.newAccessToken(clientConfig.getClientID(), clientConfig.getClientSecret(), email, GrantType.USERNAME_PASSWORD, TEST_PASSWORD).blockingFirst();
@@ -82,6 +101,69 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 	
 	@Test
 	public void testAutoRefresh() throws IOException {
+		// this is a mocked unit test - it does not hit the server. See testAutoRefreshIntegration for integration test.
+		ClientConfig config = new ClientConfig();
+		config.setZone5BaseUrl(new URL("https://test.server.com"));
+		config.setClientID("testclientid");
+		OAuthToken token1 = new OAuthToken("firstToken", "refreshToken", 1L);
+		config.setToken(token1);
+		config.setUserName("initialusername");
+		
+		Z5AuthorizationDelegate delegate = Mockito.mock(Z5AuthorizationDelegate.class);
+		OkHttpClientInterceptor_Authorization auth = new OkHttpClientInterceptor_Authorization(config, delegate);
+		
+		Chain mockChain = Mockito.mock(Chain.class);
+		
+		long expiresAt = System.currentTimeMillis() + 600000;
+		Mockito.when(mockChain.proceed(Mockito.any(Request.class))).then(new Answer<okhttp3.Response>() {
+
+			@Override
+			public okhttp3.Response answer(InvocationOnMock invocation) throws Throwable {
+				Request request = (Request)invocation.getArguments()[0];
+				assertEquals("test.server.com", request.url().host());
+				assertEquals(MediaType.get("application/json"), request.body().contentType());
+				assertEquals(config.getClientID(), request.headers("Api-Key").get(0));
+				
+				LoginResponse loginResponse = new LoginResponse();
+				loginResponse.setToken("secondToken");
+				loginResponse.setRefresh("refreshToken");
+				loginResponse.setTokenExp(expiresAt);
+				TermsAndConditions terms = new TermsAndConditions();
+				terms.setTermsId("testterms");
+				terms.setAlias("has an alias");
+				terms.setName("Test Terms");
+				terms.setDisplayVersion("v1");
+				terms.setCompanyId("acompany");
+				terms.setVersion(2);
+				loginResponse.setUpdatedTerms(Arrays.asList(terms));
+				
+				BufferedSource mockSource = Mockito.mock(BufferedSource.class);
+				Mockito.when(mockSource.rangeEquals(0, ByteString.decodeHex("efbbbf"))).thenReturn(true);
+				Mockito.when(mockSource.readString(Mockito.any(Charset.class))).thenReturn(GsonManager.getInstance().toJson(loginResponse, LoginResponse.class));
+				ResponseBody mockBody = new RealResponseBody("application/json", 10, mockSource);
+				
+				Builder responseBuilder = new Builder().body(mockBody).protocol(Protocol.HTTP_1_1).code(200).message("OK").request(request);
+				return responseBuilder.build();
+			}
+		});
+		
+		auth.refreshIfRequired(mockChain);
+		
+		Mockito.verify(mockChain).proceed(Mockito.any(Request.class));
+		
+		assertEquals("secondToken", auth.getToken().getToken());
+		assertEquals(expiresAt, auth.getToken().getTokenExp().longValue());
+		
+		// subsequent call should not go through because token is no longer expired
+		auth.refreshIfRequired(mockChain);
+		Mockito.verifyNoMoreInteractions(mockChain);
+		
+		Mockito.verify(delegate, Mockito.times(1)).onAuthTokenUpdated(auth.getToken());
+		Mockito.verify(delegate, Mockito.times(1)).onTermsUpdated(Mockito.anyList());
+	}
+	
+	@Test
+	public void testAutoRefreshIntegration() throws IOException {
 		setup();
 		
 		AuthToken currentToken = auth.getToken();
@@ -107,6 +189,27 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 	}
 	
 	@Test
+	public void testAutoRefreshIntegrationFailure() throws IOException {
+		setup();
+		
+		AuthToken currentToken = auth.getToken();
+
+		// expire the token to force the refresh sequence
+		OAuthToken expiredToken = new OAuthToken();
+		expiredToken.setToken(currentToken.getToken());
+		expiredToken.setRefreshToken(currentToken.getRefreshToken());
+		expiredToken.setTokenExp(System.currentTimeMillis());
+		auth.setToken(expiredToken);
+		auth.setClientIDAndSecret(null, null);
+		
+		User me = userApi.me().blockingFirst().body();
+		assertEquals(me.getId(), id);
+		
+		// should be unchanged because the refresh should have failed
+		assertEquals(currentToken.getToken(), auth.getToken().getToken());
+	}
+	
+	@Test
 	public void testDelegate() throws InterruptedException {
 		final AtomicBoolean d1 = new AtomicBoolean(false);
 		final AtomicBoolean d2 = new AtomicBoolean(false);
@@ -121,6 +224,11 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 				d1.set(true);
 				s1.release();
 			}
+			
+			@Override
+			public void onTermsUpdated(List<TermsAndConditions> updatedTerms) {
+				
+			}
 		};
 		
 		Z5AuthorizationDelegate delegate2 = new Z5AuthorizationDelegate() {
@@ -132,6 +240,11 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 					assertFalse("delegate should not trigger", true);
 				}
 				s2.release();
+			}
+			
+			@Override
+			public void onTermsUpdated(List<TermsAndConditions> updatedTerms) {
+				
 			}
 		};
 		
@@ -182,6 +295,11 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 				changes.get(sender[0]).add(Long.decode(sender[1]));
 				System.out.println(sender[0] + ":" + sender[1]);
 				semaphore.release();
+			}
+			
+			@Override
+			public void onTermsUpdated(List<TermsAndConditions> updatedTerms) {
+				
 			}
 		};
 

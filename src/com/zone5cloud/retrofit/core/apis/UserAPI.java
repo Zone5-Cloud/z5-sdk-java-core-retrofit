@@ -2,10 +2,10 @@ package com.zone5cloud.retrofit.core.apis;
 
 import java.util.Map;
 
-import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.NewPassword;
+import com.zone5cloud.core.users.RefreshRequest;
 import com.zone5cloud.core.users.RegisterUser;
 import com.zone5cloud.core.users.User;
 import com.zone5cloud.core.users.UserPreferences;
@@ -61,17 +61,35 @@ public interface UserAPI {
     @GET(Users.PASSWORD_RESET)
     Observable<Response<Boolean>> resetPassword(@Query("email") String email);
     
-    /** Change a user's password (Specialized) - requires both new and old password. Ensure the new password meets complexity requirements! */
-    @POST(Users.CHANGE_PASSWORD_SPECIALIZED)
+    /** 
+     *  Change a user's password - requires both new and old password. Ensure the new password meets complexity requirements.
+     *  @deprecated - please use setPassword
+     **/
+    @Deprecated
+    @POST(Users.SET_PASSWORD)
     Observable<Response<Void>> changePasswordSpecialized(@Body NewPassword input);
     
-    /** Change a user's password - set the password attribute in the input */
+    /** 
+     *  Change a user's password - old password may be required depending on clientId. 
+     *  Ensure the new password meets complexity requirements. 
+     **/
+    @POST(Users.SET_PASSWORD)
+    Observable<Response<Void>> setPassword(@Body NewPassword input);
+    
+    /** Update user */
     @POST(Users.SET_USER)
     Observable<Response<Void>> updateUser(@Body User input);
 	
-    /** Refresh a bearer token - get a new token if the current one is nearing expiry */
-    @GET(Users.REFRESH_TOKEN)
-    Observable<Response<OAuthToken>> refreshToken();
+    /** 
+     * <p>Refresh a bearer token. Input can include accept terms and billingCountry.</p> 
+     * 
+     * <p>Response includes updated terms if the clientID supports Terms enforcement on refresh.</p>
+     * 
+     * <p>note that refresh is automatically applied by the OkHttpClientInterceptor_Authorization so explicitly calling
+	 * this endpoint is not necessary.</p>
+	 */
+    @POST(Users.REFRESH_TOKEN)
+    Observable<Response<LoginResponse>> refreshToken(@Body RefreshRequest input);
 
     /**
      * Returns password complexity on a Get request.
