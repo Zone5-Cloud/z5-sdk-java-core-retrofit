@@ -15,10 +15,21 @@ In particular, the following elements are provided;
 
 ```
 String server = "https://staging.todaysplan.com.au";
-String authToken = "my user bearer token"
-		
+
+ClientConfig config = new ClientConfig();
+config.setClientID("AppKey");
+config.setClientSecret("AppKeySecret");
+config.setLogger(myILoggerImplementation);
+config.setZone5BaseUrl(new URL(server));
+
+// optional to restore a logged in session across App restarts, these are automatically updated on login, logout, accessToken and refresh
+OAuthToken token = <restore from persistent storage>;
+String username = <restore from persistent storage>;
+config.setToken(token);
+config.setUserName(username);
+        
+OkHttpClientInterceptor_Authorization auth = new OkHttpClientInterceptor_Authorization(config);
 OkHttpClientInterceptor_NoDecorate nodecorate = new OkHttpClientInterceptor_NoDecorate();
-OkHttpClientInterceptor_Authorization auth = new OkHttpClientInterceptor_Authorization(authToken);
 		
 Gson gson = GsonManager.getInstance();
 # Alternatively, if you have your own GsonBuilder - use GsonManager.decorate(builder)
@@ -40,3 +51,33 @@ ActivitiesAPI activitiesApi = retrofit.create(ActivitiesAPI.class);
 ```
 
 Example usage of the apis can be found in TestActivitiesAPI.java and TestUsersAPI.java. 
+
+## Pulling in dependency using Gradle
+
+This library is published to GitHub Packages and can be pulled into and Android project as a Gradle dependency.
+
+### Example
+top level build.gradle file
+```
+allprojects {
+    repositories {
+        google()
+        jcenter()
+
+	maven {
+            url = uri("https://maven.pkg.github.com/Zone5-Cloud/z5-sdk-java-core-retrofit")
+            credentials {
+                username = "<github user>"
+                password = "<github access token>"
+            }
+        }
+    ...
+```
+module build.gradle file
+```
+dependencies {
+
+    implementation('com.zone5cloud:z5-sdk-java-core-retrofit:2.0.0')
+    ...
+}
+```
