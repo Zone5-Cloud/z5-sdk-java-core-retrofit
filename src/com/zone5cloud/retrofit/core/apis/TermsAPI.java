@@ -15,10 +15,10 @@ import retrofit2.http.Path;
 import retrofit2.http.Streaming;
 
 public interface TermsAPI {
-	
+
 	@GET(Terms.REQUIRED)
 	@Unauthenticated
-    Observable<Response<List<TermsAndConditions>>> required();
+	Observable<Response<List<TermsAndConditions>>> required();
 
 	@GET(Terms.DOWNLOAD)
 	@Unauthenticated
@@ -26,6 +26,6 @@ public interface TermsAPI {
 	Observable<Response<ResponseBody>> download(@Path("termsId") String termsId);
 
 	@POST(Terms.ACCEPT)
-    Observable<Response<Void>> accept(@Path("termsId") String termsId);
+	Observable<Response<Void>> accept(@Path("termsId") String termsId);
 
 }

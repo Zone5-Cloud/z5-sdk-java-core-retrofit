@@ -42,13 +42,14 @@ public interface OAuthAPI {
 	 *  @param username - username (email) of user requesting token refresh. required.
 	 *  @param type - must be "password".
 	 *  @param password - required.
+	 *  @param redirect - optional redirect uri.
 	 *  
 	 *  <p>UserAPI.login provides an alternate way to authenticate with the server, with the ability to pass terms acceptance.</p>
 	 **/
 	@FormUrlEncoded
 	@Unauthenticated
 	@POST(Users.NEW_ACCESS_TOKEN)
-	Observable<Response<OAuthToken>> newAccessToken(@Field("client_id") String clientId, @Field("client_secret") String secret, @Field("username") String username, @Field("grant_type") GrantType type, @Field("password") String password, @Field("redirect_uri") String redirect_uri);
+	Observable<Response<OAuthToken>> newAccessToken(@Field("client_id") String clientId, @Field("client_secret") String secret, @Field("username") String username, @Field("grant_type") GrantType type, @Field("password") String password, @Field("redirect_uri") String redirect);
 
 	/**
 	 *  <p>Get a new auth token</p> 
