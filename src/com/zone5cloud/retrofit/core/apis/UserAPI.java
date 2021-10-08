@@ -7,6 +7,8 @@ import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.NewPassword;
 import com.zone5cloud.core.users.RefreshRequest;
 import com.zone5cloud.core.users.RegisterUser;
+import com.zone5cloud.core.users.TestPasswordRequest;
+import com.zone5cloud.core.users.TestPasswordResponse;
 import com.zone5cloud.core.users.User;
 import com.zone5cloud.core.users.UserPreferences;
 import com.zone5cloud.core.users.Users;
@@ -104,4 +106,9 @@ public interface UserAPI {
     /** Reconfirm email */
     @GET(Users.RECONFIRM)
     Observable<Response<Void>> reconfirm(@Query("email") String email);
+    
+    
+    /** Test a password to see if it meets complexity requirements */
+    @POST(Users.TEST_PASSWORD)
+    Observable<Response<TestPasswordResponse>> testPassword(@Body TestPasswordRequest password);
 }

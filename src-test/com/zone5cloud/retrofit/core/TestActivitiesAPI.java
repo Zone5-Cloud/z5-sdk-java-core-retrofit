@@ -5,11 +5,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +17,6 @@ import java.util.TimeZone;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.zone5cloud.retrofit.core.apis.ActivitiesAPI;
 import com.zone5cloud.core.activities.Activities;
 import com.zone5cloud.core.activities.DataFileUploadContext;
 import com.zone5cloud.core.activities.DataFileUploadIndex;
@@ -39,10 +37,10 @@ import com.zone5cloud.core.search.MappedResult;
 import com.zone5cloud.core.search.MappedSearchResult;
 import com.zone5cloud.core.search.Order;
 import com.zone5cloud.core.search.SearchInput;
+import com.zone5cloud.retrofit.core.apis.ActivitiesAPI;
 
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
 
 public class TestActivitiesAPI extends BaseTestRetrofit {
 	
@@ -64,15 +62,11 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		DataFileUploadIndex index = activitiesApi.upload(filePart, filenamePart, metaPart).blockingFirst().body();
 		
 		assertNotNull(index.getId()); // file processing index id
-		if (index.getState() == FileUploadState.finished) {
-			assertTrue(activitiesApi.delete(ActivityResultType.files, index.getResultId()).blockingFirst().body());
-			return;
-		}
 		
-		assertTrue(index.getState() == FileUploadState.pending || index.getState() == FileUploadState.queued);
+		assertTrue(index.getState() == FileUploadState.pending || index.getState() == FileUploadState.queued || index.getState() == FileUploadState.finished);
 		
 		// Wait for it to process
-		while(index.getState() != FileUploadState.finished) {
+		while(index.getState() != FileUploadState.finished && index.getState() != FileUploadState.error) {
 			Thread.sleep(1000L);
 			index = activitiesApi.uploadStatus(index.getId()).blockingFirst().body();
 		}
@@ -91,23 +85,26 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		assertEquals(index.getResultId(), results.getResult().getResults().get(0).getActivityId());
 		assertEquals(ActivityResultType.files, results.getResult().getResults().get(0).getActivity());
 		
-		File f = toFile(activitiesApi.downloadFit(results.getResult().getResults().get(0).getFileId()).blockingFirst().body());
-		assertTrue(f.exists() && f.length() == fit.length());
+		final long fitLength = fit.length();
+		activitiesApi.downloadFit(results.getResult().getResults().get(0).getFileId())
+			.blockingSubscribe(r -> assertEquals(fitLength, toFile(r.body()).length()));
 		
-		f = toFile(activitiesApi.downloadMap(results.getResult().getResults().get(0).getFileId()).blockingFirst().body());
-		assertTrue(f.exists() && f.length() > 0);	
+		activitiesApi.downloadMap(results.getResult().getResults().get(0).getFileId())
+			.blockingSubscribe(r -> toFile(r.body()));
 		
-		f = toFile(activitiesApi.downloadRaw(results.getResult().getResults().get(0).getFileId()).blockingFirst().body());
-		assertTrue(f.exists() && f.length() > 0);
+		activitiesApi.downloadRaw(results.getResult().getResults().get(0).getFileId())
+			.blockingSubscribe(r -> toFile(r.body()));
 		
-		f = toFile(activitiesApi.downloadCsv(results.getResult().getResults().get(0).getFileId()).blockingFirst().body());
-		assertTrue(f.exists() && f.length() > 0);
+		activitiesApi.downloadCsv(results.getResult().getResults().get(0).getFileId())
+			.blockingSubscribe(r -> toFile(r.body()));
 		
 		// Search by filename
 		search = new SearchInput<>(new UserWorkoutFileSearch());
 		search.getCriteria().setName(fit.getName());
 		search.setFields(Arrays.asList("name", "distance", "ascent", "peak3minWatts", "peak20minWatts", "channels"));
+		search.getCriteria().setOrder(Collections.singletonList(new Order("createdTime", com.zone5cloud.core.enums.Order.desc)));
 		results = activitiesApi.search(0, 1, search).blockingFirst().body();
+		
 		assertEquals(1, results.getResult().getResults().size());
 		assertEquals(index.getResultId(), results.getResult().getResults().get(0).getFileId());
 		
@@ -338,24 +335,6 @@ public class TestActivitiesAPI extends BaseTestRetrofit {
 		
 		MappedSearchResult<UserWorkoutResult> results = activitiesApi.search(0, 10, search).blockingFirst().body();
 		assertNotNull(results);
-	}
-	
-	private File toFile(ResponseBody b) throws IOException {
-		File f = File.createTempFile(getClass().getSimpleName(), "tmp");
-		f.deleteOnExit();
-		
-		FileOutputStream out = null;
-		try {
-			out = new FileOutputStream(f);
-			out.write(b.bytes());
-			out.flush();
-			
-		} finally {
-			if (out != null)
-				try { out.close(); } catch (IOException e) { }
-		}
-		System.out.println(f.getAbsolutePath());
-		return f;
 	}
 	
 }

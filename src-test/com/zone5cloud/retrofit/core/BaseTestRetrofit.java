@@ -2,7 +2,9 @@ package com.zone5cloud.retrofit.core;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 
@@ -22,7 +24,9 @@ import com.zone5cloud.retrofit.core.apis.ThirdPartyTokenAPI;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
 import com.zone5cloud.retrofit.core.apis.UserAgentAPI;
 
+import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -60,7 +64,14 @@ public class BaseTestRetrofit extends BaseTest {
 
 		return new Retrofit.Builder()
                 .baseUrl(getBaseEndpoint())
-                .client(new OkHttpClient.Builder().cookieJar(new OkHttpClientCookieJar()).addInterceptor(nodecorate).addInterceptor(agent).addInterceptor(auth).build())
+                .client(new OkHttpClient.Builder()
+                		.cookieJar(new OkHttpClientCookieJar())
+                		.addInterceptor(nodecorate).addInterceptor(agent)
+                		.addInterceptor(auth)
+                		.readTimeout(60, TimeUnit.SECONDS)
+                		.callTimeout(60, TimeUnit.SECONDS)
+                		.writeTimeout(60, TimeUnit.SECONDS)
+                		.build())
 				.addConverterFactory(ScalarsConverterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
@@ -80,9 +91,13 @@ public class BaseTestRetrofit extends BaseTest {
         agentApi = retrofit.create(UserAgentAPI.class);
     }
 	
-	public boolean isSpecialized() {
+	protected boolean isSpecialized() {
 		return getBaseEndpoint() != null && (getBaseEndpoint().equals("https://api-sp.todaysplan.com.au")
 				|| getBaseEndpoint().equals("https://api-sp-staging.todaysplan.com.au"));
+	}
+	
+	protected boolean requiresEmailVerification() {
+		return EMAIL_VERIFICATION;
 	}
 	
 	protected LoginResponse login() {

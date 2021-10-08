@@ -1,11 +1,18 @@
 package com.zone5cloud.retrofit.core;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 
 import org.apache.commons.io.FileUtils;
 
 import com.zone5cloud.core.ClientConfig;
+
+import okhttp3.ResponseBody;
+import okio.BufferedSink;
+import okio.Okio;
 
 public abstract class BaseTest {
 	
@@ -13,6 +20,7 @@ public abstract class BaseTest {
 	protected String TEST_EMAIL = "<enter-your-email-here@todaysplan.com.au>";
 	protected String TEST_PASSWORD = "<enter-your-password-here>";
 	protected String TEST_BIKE_UUID = null; // andrew SBC Staging: "d584c5cb-e81f-4fbe-bc0d-667e9bcd2c4c"
+	protected boolean EMAIL_VERIFICATION = false;
 	
 	/* SET YOUR SERVER ENDPOINT HERE */
 	private String server = "";
@@ -49,6 +57,9 @@ public abstract class BaseTest {
     						case "clientSecret":
     							clientConfig.setClientSecret(value);
     							break;
+    						case "emailVerification":
+    							EMAIL_VERIFICATION = Boolean.parseBoolean(value);
+    							break;
     						}
     					}
     				}
@@ -65,4 +76,15 @@ public abstract class BaseTest {
 		return String.format("https://%s", server);
 	}
 
+	protected File toFile(ResponseBody b) throws IOException {
+		File f = File.createTempFile(getClass().getSimpleName(), "tmp");
+		f.deleteOnExit();
+		
+		try (BufferedSink bufferedSink = Okio.buffer(Okio.sink(f))) {
+			bufferedSink.writeAll(b.source());
+		}
+        
+		assertTrue(f.exists() && f.length() > 0);
+		return f;
+	}
 }

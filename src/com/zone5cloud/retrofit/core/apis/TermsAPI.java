@@ -11,6 +11,7 @@ import retrofit2.Response;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
+import retrofit2.http.Streaming;
 
 public interface TermsAPI {
 	
@@ -18,6 +19,7 @@ public interface TermsAPI {
     Observable<Response<List<TermsAndConditions>>> required();
 
 	@GET(Terms.DOWNLOAD)
+	@Streaming
 	Observable<Response<ResponseBody>> download(@Path("termsId") String termsId);
 
 	@POST(Terms.ACCEPT)

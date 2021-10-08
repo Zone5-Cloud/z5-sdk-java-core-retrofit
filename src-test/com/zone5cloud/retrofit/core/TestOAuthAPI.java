@@ -81,11 +81,16 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		
 			// oauth refresh
 			Response<OAuthToken> response = authApi.refreshAccessToken(clientConfig.getClientID(), clientConfig.getClientSecret(), email, GrantType.REFRESH_TOKEN, clientConfig.getToken().getRefreshToken()).blockingFirst();
-			token = response.body();
-			assertNotNull(token.getToken());
-			assertNotNull(token.getTokenExp());
-			assertNotNull(token.getRefreshToken());
-			assertTrue(token.getTokenExp() > System.currentTimeMillis() + 30000);
+			if (clientConfig.getClientSecret() != null) {
+				token = response.body();
+				assertNotNull(token.getToken());
+				assertNotNull(token.getTokenExp());
+				assertNotNull(token.getRefreshToken());
+				assertTrue(token.getTokenExp() > System.currentTimeMillis() + 30000);
+			} else {
+				// when no clientsecret is configured this will fail
+				assertFalse(response.isSuccessful());
+			}
 		} else {
 			// legacy tp token with no refresh
 			Response<OAuthToken> response = authApi.newAccessToken(clientConfig.getClientID(), clientConfig.getClientSecret(), email, GrantType.USERNAME_PASSWORD, TEST_PASSWORD).blockingFirst();
@@ -374,7 +379,8 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		String clientSecret = rsp.raw().request().header("Api-Key-Secret");
 
 		assertNotNull(clientId);
-		assertNotNull(clientSecret);
+		assertEquals(this.clientConfig.getClientID(), clientId);
+		assertEquals(this.clientConfig.getClientSecret(), clientSecret);
 	}
 
 	@Test

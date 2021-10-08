@@ -23,6 +23,7 @@ import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.NewPassword;
 import com.zone5cloud.core.users.RefreshRequest;
 import com.zone5cloud.core.users.RegisterUser;
+import com.zone5cloud.core.users.TestPasswordRequest;
 import com.zone5cloud.core.users.User;
 import com.zone5cloud.core.users.UserPreferences;
 import com.zone5cloud.core.utils.GsonManager;
@@ -94,7 +95,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertEquals(email, user.getEmail());
 		
 		// Note - in S-Digital, the user will need to validate their email before they can login...
-		if (isSpecialized()) {
+		if (requiresEmailVerification()) {
 			System.out.println("Waiting for confirmation that you have verified your email address ... press Enter when done");
 			System.in.read();
 		}
@@ -181,7 +182,6 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		assertEquals(401, rsp.code());
 		Z5Error error = Z5Utilities.parseErrorResponse(rsp);
 		assertNotNull(error);
-		assertEquals("Authorization header with bearer token required", error.getMessage());
 		assertNull(rsp.body());
 	}
 	
@@ -232,5 +232,11 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		Response<String> response = userApi.passwordComplexity().blockingFirst();
 		assertNotNull(response.body());
 		assertEquals("^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$",response.body());
+	}
+	
+	@Test
+	public void testTestPassword() {
+		assertTrue(userApi.testPassword(new TestPasswordRequest(TEST_EMAIL, "pass")).blockingFirst().body().getError());
+		assertFalse(userApi.testPassword(new TestPasswordRequest(TEST_EMAIL, "aksdf3r2398KJHLG#$%&")).blockingFirst().body().getError());
 	}
 }
