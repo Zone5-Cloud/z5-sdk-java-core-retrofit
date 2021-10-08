@@ -101,7 +101,7 @@ public class TestUsersAPI extends BaseTestRetrofit {
 		}
 		
 		// Login and set our bearer token
-		LoginRequest login = new LoginRequest(email, password, clientConfig.getClientID(), clientConfig.getClientSecret());
+		LoginRequest login = new LoginRequest(email, password);
 
 		System.out.println(GsonManager.getInstance(true).toJson(login));
 		

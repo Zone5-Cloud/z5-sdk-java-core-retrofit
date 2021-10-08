@@ -15,11 +15,11 @@ import com.zone5cloud.core.Types;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
 import com.zone5cloud.core.Z5Error;
 import com.zone5cloud.core.Z5ErrorItem;
+import com.zone5cloud.core.annotations.Unauthenticated;
 import com.zone5cloud.core.enums.Z5HttpHeader;
 import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.oauth.OAuthToken;
 import com.zone5cloud.core.terms.TermsAndConditions;
-import com.zone5cloud.core.users.AuthenticationRequest;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.users.RefreshRequest;
@@ -37,6 +37,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.Buffer;
+import retrofit2.Invocation;
 
 /**
  * OKHttp Interceptor which:
@@ -167,7 +168,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		return url.scheme() + "://" + url.host() + ":" + url.port();
 	}
 	
-	private void addAPIHeaders(Request.Builder builder) {
+	private Request.Builder addAPIHeaders(Request.Builder builder) {
 		// APIKey headers go on all requests
 		String cID = this.clientID;
 		if (cID != null) {
@@ -178,6 +179,8 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		if (secret != null) {
 			builder = builder.header(Z5HttpHeader.API_KEY_SECRET.toString(), secret);
 		}
+		
+		return builder;
 	}
 	
 	/**
@@ -192,14 +195,13 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		String path = originalRequest.url().encodedPath();
 		String originalRequestUrl =  getBaseUrl(originalRequest.url());
 		Request.Builder builder = originalRequest.newBuilder();
-		
-		AuthToken authToken = this.token.get();
-		if (authToken != null && authToken.getBearer() != null && Endpoints.requiresAuth(path)) {
+				
+		if (requiresAuth(originalRequest)) {
 
 			refreshIfRequired(chain);
 
-			// refetch token after potential refresh
-			authToken = this.token.get();
+			// fetch token after potential refresh
+			AuthToken authToken = this.token.get();
 			if (authToken != null && authToken.getBearer() != null) {
 				builder = builder.header(Z5HttpHeader.AUTHORIZATION.toString(), authToken.getBearer());
 			}
@@ -207,7 +209,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		// add the key and secret only if it is zone5 server url
 		if(this.zone5BaseUrl != null && originalRequestUrl.contains(
 				this.zone5BaseUrl.toString())) {
-			addAPIHeaders(builder);
+			builder = addAPIHeaders(builder);
 		}
 		
         Request newRequest = builder.build();
@@ -277,6 +279,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private <T> T decodeRequestBody(Request request, Class<T> decodeTo) {
 		try {
 			if(request != null && request.body() != null) {
@@ -307,6 +310,7 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 	 * @param path - The request path, used to determine response type
 	 * @param response - The request's response that we need to parse auth token from if applicable
 	 **/
+	@SuppressWarnings("squid:S3776") // cognitive complexity
 	private String saveNewToken(String path, Request request, Response response) {
 		String body = null;
 		// capture token
@@ -414,5 +418,22 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		}
 		
 		return body;
+	}
+	
+	protected boolean requiresAuth(Request request) {
+		AuthToken authToken = this.token.get();
+		
+		if (request == null || authToken == null || authToken.getToken() == null) {
+			// can't authenticate even if we wanted to
+			return false;
+		}
+		
+		Invocation i = request.tag(Invocation.class);
+		if (i != null && i.method() != null) {
+			return !i.method().isAnnotationPresent(Unauthenticated.class);
+		}
+		
+		// fallback
+		return Endpoints.requiresAuth(request.url().encodedPath());
 	}
 }

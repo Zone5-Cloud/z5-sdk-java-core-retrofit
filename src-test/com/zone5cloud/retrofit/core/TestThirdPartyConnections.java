@@ -31,6 +31,7 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 		login();
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testThirdPartyTokenCrudLegacy() throws Exception {
 		thirdPartyApi.removeThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
@@ -111,7 +112,7 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 
     @Test
     public void testConnectionInit() {
-        Response<ConnectionInitResponse> rsp = thirdPartyApi.initConnectionPairing(UserConnectionsType.garminconnect, new Object()).blockingFirst();
+        @SuppressWarnings("deprecation") Response<ConnectionInitResponse> rsp = thirdPartyApi.initConnectionPairing(UserConnectionsType.garminconnect, new Object()).blockingFirst();
         assertTrue(rsp.code() >= 200 && rsp.code() < 300);
         ConnectionInitResponse response = rsp.body();
         assertNotNull(response);

@@ -2,7 +2,6 @@ package com.zone5cloud.retrofit.core;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -24,9 +23,7 @@ import com.zone5cloud.retrofit.core.apis.ThirdPartyTokenAPI;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
 import com.zone5cloud.retrofit.core.apis.UserAgentAPI;
 
-import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;

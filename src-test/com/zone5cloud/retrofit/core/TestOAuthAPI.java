@@ -29,28 +29,39 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.zone5cloud.core.ClientConfig;
+import com.zone5cloud.core.Endpoints;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
 import com.zone5cloud.core.Z5Error;
 import com.zone5cloud.core.enums.GrantType;
 import com.zone5cloud.core.oauth.AuthToken;
 import com.zone5cloud.core.oauth.OAuthToken;
+import com.zone5cloud.core.terms.Terms;
 import com.zone5cloud.core.terms.TermsAndConditions;
+import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
+import com.zone5cloud.core.users.NewPassword;
 import com.zone5cloud.core.users.RefreshRequest;
+import com.zone5cloud.core.users.RegisterUser;
+import com.zone5cloud.core.users.TestPasswordRequest;
 import com.zone5cloud.core.users.User;
+import com.zone5cloud.core.users.UserPreferences;
+import com.zone5cloud.core.users.Users;
 import com.zone5cloud.core.utils.GsonManager;
+import com.zone5cloud.retrofit.core.apis.OAuthAPI;
+import com.zone5cloud.retrofit.core.apis.TermsAPI;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
 import com.zone5cloud.retrofit.core.utilities.Z5Utilities;
 
 import okhttp3.Interceptor.Chain;
-import okhttp3.internal.http.RealResponseBody;
-import okio.BufferedSource;
-import okio.ByteString;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response.Builder;
 import okhttp3.ResponseBody;
+import okhttp3.internal.http.RealResponseBody;
+import okio.BufferedSource;
+import okio.ByteString;
+import retrofit2.Invocation;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 
@@ -105,7 +116,7 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 	}
 	
 	@Test
-	public void testAutoRefresh() throws IOException {
+	public void testRequiresRefresh() throws IOException {
 		// this is a mocked unit test - it does not hit the server. See testAutoRefreshIntegration for integration test.
 		ClientConfig config = new ClientConfig();
 		config.setZone5BaseUrl(new URL("https://test.server.com"));
@@ -167,8 +178,48 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 		Mockito.verify(delegate, Mockito.times(1)).onTermsUpdated(Mockito.anyList());
 	}
 	
+	private Request createRequest(Class<?> cls, String method, Object ...params) throws NoSuchMethodException, SecurityException {
+		Class<?>[] types = new Class<?>[params.length]; 
+		for(int i = 0; i < params.length; i++) {
+			types[i] = params[i].getClass();
+			if (types[i] == Long.class) types[i] = long.class;
+		}
+		Request.Builder builder = new Request.Builder().url("https://" + method).tag(Invocation.class, Invocation.of(cls.getMethod(method, types), Arrays.asList(params)));
+		return builder.build();
+	}
+	
 	@Test
-	public void testAutoRefreshIntegration() throws IOException {
+	public void testRequiresAuth() throws NoSuchMethodException, SecurityException {
+		auth.setToken(new OAuthToken("testtoken", "testrefresh", System.currentTimeMillis() + 60000));
+		assertTrue(auth.requiresAuth(createRequest(TermsAPI.class, "accept", "termsId")) && Endpoints.requiresAuth(Terms.ACCEPT));
+		assertFalse(auth.requiresAuth(createRequest(TermsAPI.class, "required")) || Endpoints.requiresAuth(Terms.REQUIRED));
+		assertFalse(auth.requiresAuth(createRequest(TermsAPI.class, "download", "testTerms")) || Endpoints.requiresAuth(Terms.DOWNLOAD));
+		
+		assertFalse(auth.requiresAuth(createRequest(OAuthAPI.class, "refreshAccessToken", "client", "secret", "user", GrantType.REFRESH_TOKEN, "refresh")) || Endpoints.requiresAuth(Users.NEW_ACCESS_TOKEN));
+		assertFalse(auth.requiresAuth(createRequest(OAuthAPI.class, "newAccessToken", "client", "secret", "user", GrantType.USERNAME_PASSWORD, "password")));
+		assertTrue(auth.requiresAuth(createRequest(OAuthAPI.class, "adhocAccessToken", "client")) && Endpoints.requiresAuth(Users.NEW_ADHOC_ACCESS_TOKEN));
+		
+		assertTrue(auth.requiresAuth(createRequest(UserAPI.class, "getPreferences", 1234L)) && Endpoints.requiresAuth(Users.GET_USER_PREFERENCES));
+		assertTrue(auth.requiresAuth(createRequest(UserAPI.class, "setPreferences", new UserPreferences())) && Endpoints.requiresAuth(Users.SET_USER_PREFERENCES));
+		assertTrue(auth.requiresAuth(createRequest(UserAPI.class, "register", new RegisterUser())) && Endpoints.requiresAuth(Users.REGISTER_USER));
+		assertTrue(auth.requiresAuth(createRequest(UserAPI.class, "delete", 1234l)) && Endpoints.requiresAuth(Users.DELETE_USER));
+		assertTrue(auth.requiresAuth(createRequest(UserAPI.class, "logout")) && Endpoints.requiresAuth(Users.LOGOUT));
+		assertTrue(auth.requiresAuth(createRequest(UserAPI.class, "setPassword", new NewPassword())) && Endpoints.requiresAuth(Users.SET_PASSWORD));
+		assertTrue(auth.requiresAuth(createRequest(UserAPI.class, "updateUser", new User())) && Endpoints.requiresAuth(Users.SET_USER));
+		
+		assertFalse(auth.requiresAuth(createRequest(UserAPI.class, "login", new LoginRequest())) || Endpoints.requiresAuth(Users.LOGIN));
+		assertFalse(auth.requiresAuth(createRequest(UserAPI.class, "isEmailRegistered", "email")) || Endpoints.requiresAuth(Users.EMAIL_EXISTS));
+		assertFalse(auth.requiresAuth(createRequest(UserAPI.class, "getEmailVerification", "email")) || Endpoints.requiresAuth(Users.EMAIL_STATUS));
+		assertFalse(auth.requiresAuth(createRequest(UserAPI.class, "resetPassword", "email")) || Endpoints.requiresAuth(Users.PASSWORD_RESET));
+		assertFalse(auth.requiresAuth(createRequest(UserAPI.class, "refreshToken", new RefreshRequest())) || Endpoints.requiresAuth(Users.REFRESH_TOKEN));
+		assertFalse(auth.requiresAuth(createRequest(UserAPI.class, "passwordComplexity")) || Endpoints.requiresAuth(Users.PASSWORD_COMPLEXITY));
+		assertFalse(auth.requiresAuth(createRequest(UserAPI.class, "reconfirm", "email")) || Endpoints.requiresAuth(Users.RECONFIRM));
+		assertFalse(auth.requiresAuth(createRequest(UserAPI.class, "testPassword", new TestPasswordRequest())) || Endpoints.requiresAuth(Users.TEST_PASSWORD));
+		
+	}
+	
+	@Test
+	public void testAutoRefresh() throws IOException {
 		setup();
 		
 		AuthToken currentToken = auth.getToken();
