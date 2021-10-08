@@ -48,6 +48,22 @@ public interface OAuthAPI {
 	@FormUrlEncoded
 	@Unauthenticated
 	@POST(Users.NEW_ACCESS_TOKEN)
+	Observable<Response<OAuthToken>> newAccessToken(@Field("client_id") String clientId, @Field("client_secret") String secret, @Field("username") String username, @Field("grant_type") GrantType type, @Field("password") String password, @Field("redirect_uri") String redirect_uri);
+
+	/**
+	 *  <p>Get a new auth token</p> 
+	 *  
+	 *  @param clientId - not required if OkHttpClientInterceptor_Authorization has been configured with a clientId. Required otherwise.
+	 *  @param secret - not required if OkHttpClientInterceptor_Authorization has been configured with a secret. Required otherwise.
+	 *  @param username - username (email) of user requesting token refresh. required.
+	 *  @param type - must be "password".
+	 *  @param password - required.
+	 *  
+	 *  <p>UserAPI.login provides an alternate way to authenticate with the server, with the ability to pass terms acceptance.</p>
+	 **/
+	@FormUrlEncoded
+	@Unauthenticated
+	@POST(Users.NEW_ACCESS_TOKEN)
 	Observable<Response<OAuthToken>> newAccessToken(@Field("client_id") String clientId, @Field("client_secret") String secret, @Field("username") String username, @Field("grant_type") GrantType type, @Field("password") String password);
 
 	/** 

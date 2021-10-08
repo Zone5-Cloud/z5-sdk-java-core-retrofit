@@ -102,10 +102,16 @@ public class TestOAuthAPI extends BaseTestRetrofit {
 				// when no clientsecret is configured this will fail
 				assertFalse(response.isSuccessful());
 			}
-		} else {
-			// legacy tp token with no refresh
+		} 
+		
+		if (clientConfig.getClientSecret() != null) {
 			Response<OAuthToken> response = authApi.newAccessToken(clientConfig.getClientID(), clientConfig.getClientSecret(), email, GrantType.USERNAME_PASSWORD, TEST_PASSWORD).blockingFirst();
 			OAuthToken tok = response.body();
+			assertNotNull(tok.getToken());
+			assertNotNull(tok.getTokenExp());
+			
+			response = authApi.newAccessToken(clientConfig.getClientID(), clientConfig.getClientSecret(), email, GrantType.USERNAME_PASSWORD, TEST_PASSWORD, "https://localhost").blockingFirst();
+			tok = response.body();
 			assertNotNull(tok.getToken());
 			assertNotNull(tok.getTokenExp());
 		}
