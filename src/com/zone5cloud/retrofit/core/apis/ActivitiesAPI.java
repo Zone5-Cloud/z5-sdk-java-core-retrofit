@@ -29,6 +29,7 @@ import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
+import retrofit2.http.Streaming;
 
 public interface ActivitiesAPI {
 	
@@ -73,6 +74,7 @@ public interface ActivitiesAPI {
     
     /** Use the DataFileUploadIndex.id to download the original uploaded file - this can be used even if the file could not be processed */
     @GET(Activities.FILE_INDEX_DOWNLOAD)
+    @Streaming
     Observable<Response<ResponseBody>> downloadUpload(@Path("indexId") long indexId);
  
     /** Query for currently processing files, and files which have been uploaded or reprocessed within the last X seconds */
@@ -89,18 +91,22 @@ public interface ActivitiesAPI {
     
     /** Download a fit file - the fileId is the same as the activityId, when the activityType=files. It's also provided in any activities search result */
     @GET(Activities.DOWNLOAD_FIT)
+    @Streaming
     Observable<Response<ResponseBody>> downloadFit(@Path("fileId") long fileId);
     
     /** Download a fit file which has normalized channel data - useful for timeseries graphs */
     @GET(Activities.DOWNLOAD_RAW3)
+    @Streaming
     Observable<Response<ResponseBody>> downloadRaw(@Path("fileId") long fileId);
     
     /** Download a csv file which has normalized channel data */
     @GET(Activities.DOWNLOAD_CSV)
+    @Streaming
     Observable<Response<ResponseBody>> downloadCsv(@Path("fileId") long fileId);
     
     /** Download a png file which is a static map of the completed route */
     @GET(Activities.DOWNLOAD_MAP)
+    @Streaming
     Observable<Response<ResponseBody>> downloadMap(@Path("fileId") long fileId);
     
     /** Download a png file which is a static map of the completed route */

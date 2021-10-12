@@ -26,17 +26,26 @@ import retrofit2.http.QueryMap;
 
 public interface ThirdPartyTokenAPI {
 	
-	/** Set a 3rd party OAuth token - returns a success: true|false */
+	/**
+	 * Set a 3rd party OAuth token - returns a success: true|false
+	 * @deprecated
+	 */
 	@Deprecated
     @POST(ThirdParty.SET_THIRD_PARTY_CONNECTION)
     Observable<Response<ThirdPartyTokenResponse>> setThirdPartyToken(@Body ThirdPartyToken token, @Query("service_name") UserConnectionsType type);
 
-    /** Delete a 3rd party OAuth token - returns a success: true|false */
+    /** 
+     * Delete a 3rd party OAuth token - returns a success: true|false 
+     * @deprecated
+     */
 	@Deprecated
     @POST(ThirdParty.REM_THIRD_PARTY_CONNECTION)
     Observable<Response<ThirdPartyTokenResponse>> removeThirdPartyToken(@Query("service_name") UserConnectionsType type);
     
-    /** Returns details of the current 3rd party token (if any) - returns a available: true|false, token: {...} */
+    /** 
+     * Returns details of the current 3rd party token (if any) - returns a available: true|false, token: {...}
+     * @deprecated
+     */
 	@Deprecated
     @GET(ThirdParty.HAS_THIRD_PARTY_CONNECTION)
     Observable<Response<ThirdPartyTokenResponse>> hasThirdPartyToken(@Query("service_name") UserConnectionsType type);
@@ -61,7 +70,9 @@ public interface ThirdPartyTokenAPI {
     /**
      * Fetch the Third Party Connect URL
      * This method is deprecated. Use pairConnection
-     * @param service The name of the service that will be connected.
+     * @deprecated Please use @see {@link #pairConnection(UserConnectionsType, String)}  
+	 *
+	 * @param service The name of the service that will be connected.
      * @param emptyObject an empty body
      * @return On a successful request returns  {@link ConnectionInitResponse} containing
      * the endpoint returns an OAuth URL allowing you to log into and authorize the third-party service.
@@ -73,7 +84,9 @@ public interface ThirdPartyTokenAPI {
     /**
      * Confirm a connection to a third-party service, such as Garmin Connect or Strava.
      * This method is deprecated. Use pairConnection
-     * @param connectionType
+     * @deprecated Please use @see {@link #pairConnection(UserConnectionsType, String)}  
+	 *
+	 * @param connectionType
      * @param queries The query string returned by the third-party when you initiated the connection.
      * @return
      */

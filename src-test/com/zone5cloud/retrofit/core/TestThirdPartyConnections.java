@@ -31,6 +31,7 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 		login();
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testThirdPartyTokenCrudLegacy() throws Exception {
 		thirdPartyApi.removeThirdPartyToken(UserConnectionsType.strava).blockingFirst().body();
@@ -66,7 +67,7 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 				String connectService = rsp.body();
 				
 				URL url = new URL(connectService);
-				assertEquals("connect.zone5cloud.com", url.getHost());
+				assertTrue(url.getHost().startsWith("connect") && (url.getHost().endsWith("zone5cloud.com") || (url.getHost().endsWith("specialized.com"))));
 				assertTrue(url.getQuery().contains("redirectUrl=appname://callback.test.com"));
 				assertTrue(url.getQuery().contains("type=" + type.name()));
 			} else {
@@ -111,7 +112,7 @@ public class TestThirdPartyConnections extends BaseTestRetrofit {
 
     @Test
     public void testConnectionInit() {
-        Response<ConnectionInitResponse> rsp = thirdPartyApi.initConnectionPairing(UserConnectionsType.garminconnect, new Object()).blockingFirst();
+        @SuppressWarnings("deprecation") Response<ConnectionInitResponse> rsp = thirdPartyApi.initConnectionPairing(UserConnectionsType.garminconnect, new Object()).blockingFirst();
         assertTrue(rsp.code() >= 200 && rsp.code() < 300);
         ConnectionInitResponse response = rsp.body();
         assertNotNull(response);

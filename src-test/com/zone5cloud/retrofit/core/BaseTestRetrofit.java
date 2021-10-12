@@ -2,18 +2,23 @@ package com.zone5cloud.retrofit.core;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Before;
 
 import com.google.gson.Gson;
 import com.zone5cloud.core.ClientConfig;
 import com.zone5cloud.core.Z5AuthorizationDelegate;
 import com.zone5cloud.core.oauth.AuthToken;
+import com.zone5cloud.core.terms.TermsAndConditions;
 import com.zone5cloud.core.users.LoginRequest;
 import com.zone5cloud.core.users.LoginResponse;
 import com.zone5cloud.core.utils.GsonManager;
 import com.zone5cloud.retrofit.core.apis.ActivitiesAPI;
 import com.zone5cloud.retrofit.core.apis.MetricsAPI;
 import com.zone5cloud.retrofit.core.apis.OAuthAPI;
+import com.zone5cloud.retrofit.core.apis.TermsAPI;
 import com.zone5cloud.retrofit.core.apis.ThirdPartyTokenAPI;
 import com.zone5cloud.retrofit.core.apis.UserAPI;
 import com.zone5cloud.retrofit.core.apis.UserAgentAPI;
@@ -28,6 +33,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 public class BaseTestRetrofit extends BaseTest {
 	
 	protected UserAPI userApi = null;
+	protected TermsAPI termsApi = null;
 	protected ActivitiesAPI activitiesApi = null;
 	protected MetricsAPI metricsApi = null;
 	protected ThirdPartyTokenAPI thirdPartyApi = null;
@@ -40,6 +46,11 @@ public class BaseTestRetrofit extends BaseTest {
 		public void onAuthTokenUpdated(AuthToken token) {
 			clientConfig.setToken(token);
 		}
+		
+		@Override
+		public void onTermsUpdated(List<TermsAndConditions> updatedTerms) {
+			
+		}
 	};
 	
 	protected Retrofit buildRetrofit(ClientConfig config) {
@@ -50,7 +61,14 @@ public class BaseTestRetrofit extends BaseTest {
 
 		return new Retrofit.Builder()
                 .baseUrl(getBaseEndpoint())
-                .client(new OkHttpClient.Builder().cookieJar(new OkHttpClientCookieJar()).addInterceptor(nodecorate).addInterceptor(agent).addInterceptor(auth).build())
+                .client(new OkHttpClient.Builder()
+                		.cookieJar(new OkHttpClientCookieJar())
+                		.addInterceptor(nodecorate).addInterceptor(agent)
+                		.addInterceptor(auth)
+                		.readTimeout(60, TimeUnit.SECONDS)
+                		.callTimeout(60, TimeUnit.SECONDS)
+                		.writeTimeout(60, TimeUnit.SECONDS)
+                		.build())
 				.addConverterFactory(ScalarsConverterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
@@ -62,6 +80,7 @@ public class BaseTestRetrofit extends BaseTest {
         Retrofit retrofit = buildRetrofit(this.clientConfig);
 
         userApi = retrofit.create(UserAPI.class);
+        termsApi = retrofit.create(TermsAPI.class);
         activitiesApi = retrofit.create(ActivitiesAPI.class);
         metricsApi = retrofit.create(MetricsAPI.class);
         thirdPartyApi = retrofit.create(ThirdPartyTokenAPI.class);
@@ -69,9 +88,13 @@ public class BaseTestRetrofit extends BaseTest {
         agentApi = retrofit.create(UserAgentAPI.class);
     }
 	
-	public boolean isSpecialized() {
+	protected boolean isSpecialized() {
 		return getBaseEndpoint() != null && (getBaseEndpoint().equals("https://api-sp.todaysplan.com.au")
 				|| getBaseEndpoint().equals("https://api-sp-staging.todaysplan.com.au"));
+	}
+	
+	protected boolean requiresEmailVerification() {
+		return EMAIL_VERIFICATION;
 	}
 	
 	protected LoginResponse login() {
