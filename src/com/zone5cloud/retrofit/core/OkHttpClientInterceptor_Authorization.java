@@ -102,7 +102,19 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		this.log = clientConfig.getLogger() != null ? clientConfig.getLogger() : new DefaultLogger();
 	}
 
-	/** Set the Authentication service API key and secret. Set clientSecret to null for Gigya keys */
+	public ClientConfig getConfig() {
+		ClientConfig config = new ClientConfig();
+		config.setClientID(this.clientID);
+		config.setClientSecret(this.clientSecret);
+		config.setToken(this.getToken());
+		config.setUserName(this.userName);
+		config.setZone5BaseUrl(this.zone5BaseUrl);
+		config.setLogger(this.log);
+		
+		return config;
+	}
+	
+	/** Set the Authentication service API key and optional secret. */
 	public void setClientIDAndSecret(String clientID, String clientSecret) {
 		this.clientID = clientID;
 		this.clientSecret = clientSecret;
@@ -128,6 +140,19 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		}
 	}
 	
+	/** Get the Auth token */
+	public AuthToken getToken() {
+		return this.token.get();
+	}
+	
+	public void setUserName(String userName){
+		this.userName = userName;
+	}
+	
+	public String getUserName() {
+		return this.userName;
+	}
+	
 	/** Fire delegate callbacks for updated terms */
 	private void updatedTerms(List<TermsAndConditions> updatedTerms) {
 		if (updatedTerms == null || updatedTerms.isEmpty()) {
@@ -142,15 +167,6 @@ public class OkHttpClientInterceptor_Authorization implements Interceptor {
 		});
 	}
 
-	public void setUserName(String userName){
-		this.userName = userName;
-	}
-	
-	/** Get the Auth token */
-	public AuthToken getToken() {
-		return this.token.get();
-	}
-	
 	public void subscribe(Z5AuthorizationDelegate delegate) {
 		delegates.add(delegate);
 	}
